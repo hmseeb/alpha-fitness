@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ArrowRight, Dumbbell } from 'lucide-react'
 import type { AuthUser } from '../types'
 
 export function Login({ onSignedIn }: { onSignedIn: (u: AuthUser) => void }) {
@@ -16,146 +16,121 @@ export function Login({ onSignedIn }: { onSignedIn: (u: AuthUser) => void }) {
       const user = mode === 'signin'
         ? await window.api.auth.signIn(email, password)
         : await window.api.auth.signUp(email, password)
-      if (!user?.id) throw new Error('Check your email to confirm and try again.')
+      if (!user?.id) throw new Error('Check your email to confirm, then sign in.')
       onSignedIn(user)
     } catch (e: any) {
-      setErr(e?.message ?? 'Authentication failed.')
+      setErr(e?.message ?? 'Sign in failed.')
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <div className="paper min-h-screen bg-paper text-ink flex flex-col">
-      {/* MASTHEAD */}
-      <header className="border-b-4 border-double border-ink">
-        <div className="max-w-5xl mx-auto px-10 py-5 flex items-center justify-between">
-          <p className="mono text-[10px] tracking-widest2 uppercase text-ink-soft">
-            Vol. I · Issue 02 · Established Jampur 2026
-          </p>
-          <p className="mono text-[10px] tracking-widest2 uppercase text-ink-soft">
-            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long' })}
-          </p>
+    <div className="mesh-bg min-h-screen bg-canvas flex items-center justify-center p-8">
+      {/* Background mesh — soft lime + coral blobs */}
+      <div className="absolute top-12 left-12 flex items-center gap-2.5">
+        <div className="w-9 h-9 bg-ink rounded-2xl flex items-center justify-center">
+          <Dumbbell size={18} className="text-lime" />
         </div>
-      </header>
+        <div>
+          <p className="display-sm text-base">Alpha Fitness</p>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Jampur · Pakistan</p>
+        </div>
+      </div>
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-10 py-14 grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
-        {/* LEFT — masthead title */}
-        <div className="md:col-span-7 ink-in">
-          <p className="mono text-[10px] tracking-widest2 uppercase text-oxblood mb-6 flex items-center gap-3">
-            <span className="inline-block h-px w-8 bg-oxblood" />
-            The Members' Register
-          </p>
+      <div className="w-full max-w-[1100px] grid md:grid-cols-2 gap-8 items-center">
+        {/* LEFT — hero */}
+        <div className="pop">
+          <span className="inline-flex items-center gap-2 bg-lime/30 text-ink-2 px-3 py-1.5 rounded-full text-xs font-medium mb-7">
+            <span className="relative inline-flex w-2 h-2 bg-moss rounded-full">
+              <span className="absolute inset-0 bg-moss rounded-full pulse-dot" />
+            </span>
+            Members register · v0.3
+          </span>
 
-          <h1 className="serif text-[6rem] md:text-[8.5rem] leading-[0.85] tracking-tight text-ink">
-            Alpha
-            <br />
-            <span className="serif-italic text-oxblood">Fitness</span>
-            <br />
-            <span className="text-ink-soft">Jampur</span>
-            <span className="text-oxblood">.</span>
+          <h1 className="display text-[5.5rem] md:text-[7rem]">
+            Run your <span style={{ color: 'var(--lime-deep)', background: 'var(--lime)', padding: '0 0.18em', borderRadius: '0.12em' }}>gym</span> the
+            <br /> right way.
           </h1>
 
-          <div className="mt-8 max-w-md">
-            <div className="rule-fancy mb-6" />
-            <p className="serif-body text-base text-ink-2 leading-relaxed dropcap">
-              A bound ledger of every member who has crossed the threshold of our gymnasium — their dues, attendance and standing — kept current by the proprietor.
-            </p>
-          </div>
+          <p className="text-lg text-muted mt-7 max-w-md leading-relaxed">
+            Track members, fees, and payments in one place. Works offline. Syncs to the cloud the moment you're back online.
+          </p>
 
-          <div className="mt-8 flex items-center gap-6 text-xs annotation">
-            <span>— Est. <span className="lining">2026</span></span>
-            <span className="text-rule-strong">·</span>
-            <span>Offline-keeping, cloud-bound.</span>
+          <div className="mt-10 grid grid-cols-3 gap-4 max-w-md">
+            <Feature emoji="⚡" label="Instant" sub="local-first" />
+            <Feature emoji="☁︎" label="Synced" sub="auto cloud" />
+            <Feature emoji="✦" label="Private" sub="just you" />
           </div>
         </div>
 
-        {/* RIGHT — sign-in card */}
-        <div className="md:col-span-5 ink-in ink-2">
-          <div className="bg-paper-2 border border-rule p-8 shadow-paper">
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-rule">
-              <p className="mono text-[10px] tracking-widest2 uppercase text-ink-soft">
-                {mode === 'signin' ? '§ Sign in' : '§ Register'}
-              </p>
-              <p className="mono text-[10px] tracking-widest2 uppercase text-ink-faint">
-                p. 001
-              </p>
+        {/* RIGHT — auth card */}
+        <div className="pop pop-2">
+          <div className="bg-surface rounded-4xl lift-md p-9">
+            <div className="flex items-center justify-between mb-7">
+              <h2 className="display-md text-3xl">
+                {mode === 'signin' ? 'Welcome back.' : 'Get started.'}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+                className="text-xs font-medium text-muted hover:text-ink transition"
+              >
+                {mode === 'signin' ? 'New? Sign up' : 'Have an account? Sign in'}
+              </button>
             </div>
 
-            <h2 className="serif text-4xl leading-tight mb-2">
-              {mode === 'signin' ? (
-                <>Welcome <span className="serif-italic">back,</span></>
-              ) : (
-                <>A new <span className="serif-italic">account.</span></>
-              )}
-            </h2>
-            <p className="serif-body text-ink-soft text-sm mb-7">
-              {mode === 'signin' ? 'Please enter your credentials below.' : 'Choose an email and a password of at least six characters.'}
-            </p>
-
-            <form onSubmit={submit} className="space-y-5">
-              <Field label="Email" type="email" value={email} onChange={setEmail} autoFocus />
-              <Field label="Password" type="password" value={password} onChange={setPassword} minLength={6} />
+            <form onSubmit={submit} className="space-y-4">
+              <Field label="Email" type="email" value={email} onChange={setEmail} autoFocus placeholder="you@gym.com" />
+              <Field label="Password" type="password" value={password} onChange={setPassword} minLength={6} placeholder="••••••••" />
 
               {err && (
-                <p className="serif-italic text-sm text-oxblood border-l-2 border-oxblood pl-3">
+                <p className="text-sm bg-coral/10 text-coral border border-coral/30 rounded-2xl px-4 py-2.5">
                   {err}
                 </p>
               )}
 
               <button
                 type="submit" disabled={busy}
-                className="group w-full bg-ink text-paper hover:bg-oxblood disabled:opacity-50 transition-colors py-4 px-6 flex items-center justify-between"
+                className="group w-full bg-ink text-lime hover:bg-ink-2 disabled:opacity-50 transition rounded-2xl py-4 px-6 flex items-center justify-between font-semibold mt-5"
               >
-                <span className="serif text-xl tracking-tight">
-                  {mode === 'signin' ? 'Enter the register' : 'Create account'}
-                </span>
-                {busy ? <Loader2 size={18} className="animate-spin" /> : <span className="serif-italic text-lg">→</span>}
+                <span>{mode === 'signin' ? 'Sign in' : 'Create account'}</span>
+                {busy ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} className="group-hover:translate-x-1 transition" />}
               </button>
             </form>
 
-            <div className="rule-fancy rule-fancy-paper2 mt-8 mb-5" />
-
-            <button
-              type="button"
-              onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-              className="block w-full text-center serif-italic text-sm text-ink-soft hover:text-ink transition"
-            >
-              {mode === 'signin' ? 'Or, register a new account →' : '← Already an account? Sign in.'}
-            </button>
+            <p className="text-center text-[11px] text-soft mt-6">
+              Encrypted on this device with your system keychain
+            </p>
           </div>
-
-          <p className="mt-4 text-center mono text-[10px] tracking-widest2 uppercase text-ink-faint">
-            entries are kept locally · synchronised to cloud
-          </p>
         </div>
-      </main>
-
-      <footer className="border-t border-rule">
-        <div className="max-w-5xl mx-auto px-10 py-4 flex items-center justify-between mono text-[10px] tracking-widest2 uppercase text-ink-faint">
-          <span>Printed in single copy</span>
-          <span>—— ✦ ——</span>
-          <span>The proprietor's edition</span>
-        </div>
-      </footer>
+      </div>
     </div>
   )
 }
 
-function Field({ label, type, value, onChange, autoFocus, minLength }: {
-  label: string; type: string; value: string; onChange: (v: string) => void; autoFocus?: boolean; minLength?: number
+function Field({ label, type, value, onChange, placeholder, autoFocus, minLength }: {
+  label: string; type: string; value: string; onChange: (v: string) => void; placeholder?: string; autoFocus?: boolean; minLength?: number
 }) {
   return (
-    <label className="block group">
-      <span className="mono text-[10px] tracking-widest2 uppercase text-ink-soft group-focus-within:text-oxblood transition">
-        {label}
-      </span>
+    <label className="block">
+      <span className="text-xs font-semibold text-muted mb-1.5 block">{label}</span>
       <input
         type={type} required value={value} minLength={minLength}
-        autoFocus={autoFocus}
+        autoFocus={autoFocus} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full bg-transparent border-0 border-b border-rule-strong focus:border-ink outline-none py-2 serif-body text-lg text-ink placeholder-ink-faint transition"
+        className="w-full bg-surface-2/60 border border-line focus:bg-surface focus:border-ink rounded-2xl px-4 py-3 text-base outline-none transition placeholder-soft"
       />
     </label>
+  )
+}
+
+function Feature({ emoji, label, sub }: { emoji: string; label: string; sub: string }) {
+  return (
+    <div className="bg-surface rounded-2xl px-3 py-3 lift">
+      <p className="text-xl">{emoji}</p>
+      <p className="text-sm font-semibold mt-1">{label}</p>
+      <p className="text-[10px] text-muted uppercase tracking-wider">{sub}</p>
+    </div>
   )
 }

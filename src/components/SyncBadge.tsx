@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LogOut } from 'lucide-react'
+import { LogOut, Cloud, CloudOff, RefreshCw, AlertCircle } from 'lucide-react'
 import type { SyncStatus } from '../types'
 
 export function SyncBadge({ onSignOut }: { onSignOut: () => void }) {
@@ -12,30 +12,31 @@ export function SyncBadge({ onSignOut }: { onSignOut: () => void }) {
   }, [])
 
   const cfg = {
-    idle: { dot: 'bg-olive', label: 'In good order', color: 'text-olive' },
-    syncing: { dot: 'bg-teal ink-pulse', label: 'Synchronising', color: 'text-teal' },
-    offline: { dot: 'bg-ink-faint', label: 'Off the wire', color: 'text-ink-soft' },
-    error: { dot: 'bg-oxblood ink-pulse', label: 'Awaiting retry', color: 'text-oxblood' },
-  }[s.status]
+    idle:    { icon: Cloud,        cls: 'bg-moss/15 text-moss',    label: 'Synced' },
+    syncing: { icon: RefreshCw,    cls: 'bg-azure/15 text-azure',  label: 'Syncing', spin: true },
+    offline: { icon: CloudOff,     cls: 'bg-surface-2 text-muted', label: 'Offline' },
+    error:   { icon: AlertCircle,  cls: 'bg-coral/15 text-coral',  label: 'Retry' },
+  }[s.status] as any
+  const Icon = cfg.icon
 
   return (
     <div className="flex items-center gap-2">
       <button
         onClick={() => window.api.sync.now()}
-        className="flex items-center gap-2.5 px-3.5 py-2.5 border border-rule hover:border-ink bg-paper hover:bg-paper-2 transition"
-        title={s.lastError ?? (s.lastSyncedAt ? `Last synchronised ${new Date(s.lastSyncedAt).toLocaleTimeString()}` : 'Synchronise')}
+        className={`flex items-center gap-2 px-3.5 py-3 ${cfg.cls} rounded-2xl text-xs font-semibold transition hover:opacity-80`}
+        title={s.lastError ?? (s.lastSyncedAt ? `Last synced ${new Date(s.lastSyncedAt).toLocaleTimeString()}` : 'Sync now')}
       >
-        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-        <span className={`mono text-[10px] tracking-widest2 uppercase ${cfg.color}`}>{cfg.label}</span>
+        <Icon size={14} className={cfg.spin ? 'animate-spin' : ''} />
+        <span>{cfg.label}</span>
         {s.pending > 0 && (
-          <span className="mono text-[10px] text-ink-soft border-l border-rule pl-2 tabular">
-            {String(s.pending).padStart(2, '0')}
+          <span className="bg-surface/60 px-1.5 rounded-full mono text-[10px] tabular">
+            {s.pending}
           </span>
         )}
       </button>
       <button
         onClick={onSignOut}
-        className="border border-rule hover:border-oxblood hover:text-oxblood p-2.5 text-ink-soft transition"
+        className="p-3 rounded-2xl bg-surface hover:bg-surface-2 border border-line text-muted hover:text-ink transition"
         title="Sign out"
       >
         <LogOut size={14} />

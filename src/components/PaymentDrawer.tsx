@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Student, Payment } from '../types'
-import { X, Plus } from 'lucide-react'
+import { X, Plus, CheckCircle2 } from 'lucide-react'
 import { StudentAvatar } from './StudentAvatar'
 
 export function PaymentDrawer({ student, onClose }: { student: Student; onClose: () => void }) {
@@ -28,99 +28,114 @@ export function PaymentDrawer({ student, onClose }: { student: Student; onClose:
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="flex-1 bg-ink/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="paper-rise w-full max-w-md bg-paper border-l border-ink shadow-deep flex flex-col">
-        {/* HEADER — like a ledger heading */}
-        <div className="border-b-4 border-double border-ink p-6">
-          <div className="flex items-center justify-between mono text-[10px] tracking-widest2 uppercase text-ink-soft pb-3 border-b border-rule">
-            <span>Member's account</span>
-            <button onClick={onClose} className="border border-rule hover:border-ink p-1.5 text-ink-soft hover:text-ink transition">
-              <X size={12} />
+      <div className="flex-1 bg-ink/40 backdrop-blur-md" onClick={onClose} />
+      <div className="slide-in w-full max-w-md bg-surface shadow-2xl flex flex-col">
+        {/* HEADER */}
+        <div className="px-6 pt-6 pb-5 border-b border-line">
+          <div className="flex items-center justify-between mb-5">
+            <p className="text-xs uppercase tracking-widest text-muted font-semibold">Payments</p>
+            <button onClick={onClose} className="p-2 rounded-xl bg-surface-2 hover:bg-surface-3 text-muted hover:text-ink transition">
+              <X size={14} />
             </button>
           </div>
 
-          <div className="flex items-center gap-4 pt-4">
-            <StudentAvatar student={student} size={64} />
-            <div>
-              <h3 className="serif text-2xl leading-none tracking-tight">{student.name}</h3>
-              <p className="annotation text-sm mt-1">
-                — folio <span className="mono">{String(student.sr_no).padStart(3, '0')}</span> · {student.contact || 'no telephone'}
+          <div className="flex items-center gap-4">
+            <StudentAvatar student={student} size={56} />
+            <div className="flex-1">
+              <h3 className="display-sm text-xl leading-tight">{student.name}</h3>
+              <p className="text-xs text-muted mt-1 mono">
+                #{String(student.sr_no).padStart(3, '0')} · {student.contact || 'no contact'}
               </p>
             </div>
           </div>
 
-          {/* Summary row */}
-          <div className="mt-5 pt-4 border-t border-rule grid grid-cols-3 gap-3">
-            <Stat label="Total paid" value={`₨ ${totalPaid.toLocaleString()}`} accent="text-olive" />
-            <Stat label="Next due" value={student.next_fees_date ?? '—'} mono />
-            <Stat label="Entries" value={String(payments.length).padStart(2, '0')} />
+          {/* Summary stats */}
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <SummaryCard label="Total paid" value={`PKR ${totalPaid.toLocaleString()}`} accent="moss" />
+            <SummaryCard label="Next due" value={student.next_fees_date ?? '—'} mono />
+            <SummaryCard label="Entries" value={String(payments.length).padStart(2, '0')} />
           </div>
         </div>
 
-        {/* BODY — receipts */}
+        {/* BODY */}
         <div className="flex-1 overflow-y-auto p-6 space-y-3">
           {!showForm && (
             <button
               onClick={() => setShowForm(true)}
-              className="group w-full flex items-center justify-between px-5 py-4 bg-ink text-paper hover:bg-oxblood transition"
+              className="group w-full flex items-center justify-between px-5 py-4 bg-lime text-ink hover:bg-lime-deep transition rounded-3xl font-bold glow-lime"
             >
-              <span className="serif text-xl tracking-tight">Record a <span className="serif-italic">payment</span></span>
-              <Plus size={18} className="group-hover:rotate-90 transition" />
+              <span className="flex items-center gap-3">
+                <span className="w-9 h-9 bg-ink text-lime rounded-2xl flex items-center justify-center">
+                  <Plus size={16} />
+                </span>
+                Record payment
+              </span>
+              <span className="text-sm opacity-50 group-hover:opacity-100 transition">↵</span>
             </button>
           )}
 
           {showForm && (
-            <div className="bg-paper-2 border border-ink p-5 space-y-4">
-              <div className="flex items-center justify-between border-b border-rule pb-3">
-                <p className="mono text-[10px] tracking-widest2 uppercase text-oxblood flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-oxblood ink-pulse rounded-full" />
-                  Receipt in progress
-                </p>
-                <button onClick={() => setShowForm(false)} className="annotation text-xs hover:text-ink">cancel</button>
+            <div className="bg-canvas border border-line rounded-3xl p-5 space-y-3">
+              <div className="flex items-center gap-2 pb-3 border-b border-line">
+                <span className="w-2 h-2 bg-coral rounded-full" />
+                <p className="text-xs uppercase tracking-widest text-coral font-semibold">Recording</p>
+                <button onClick={() => setShowForm(false)} className="ml-auto text-xs text-muted hover:text-ink">cancel</button>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <DrawerField label="Amount (₨)">
+              <div className="grid grid-cols-2 gap-3">
+                <DrawerField label="Amount (PKR)">
                   <input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: +e.target.value })} className={drawerInput} />
                 </DrawerField>
                 <DrawerField label="Date">
                   <input type="date" value={form.paid_on} onChange={(e) => setForm({ ...form, paid_on: e.target.value })} className={drawerInput} />
                 </DrawerField>
               </div>
-              <DrawerField label="Tendered via">
+              <DrawerField label="Method">
                 <input value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })} placeholder="Cash · Meezan Bank · UBL" className={drawerInput} />
               </DrawerField>
-              <DrawerField label="Note">
+              <DrawerField label="Note (optional)">
                 <input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className={drawerInput} />
               </DrawerField>
-              <button onClick={submit} className="w-full bg-olive text-paper hover:bg-ink transition py-3 mono text-[10px] tracking-widest2 uppercase">
-                Confirm receipt
+              <button onClick={submit} className="w-full bg-ink text-lime hover:bg-ink-2 transition py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2">
+                <CheckCircle2 size={16} /> Confirm
               </button>
             </div>
           )}
 
           {payments.length === 0 && !showForm && (
             <div className="text-center py-16">
-              <p className="serif text-2xl text-ink-faint">No receipts yet<span className="serif-italic">.</span></p>
-              <p className="annotation text-xs mt-1">— all payments will be listed here</p>
+              <div className="w-14 h-14 bg-surface-2 rounded-full flex items-center justify-center mx-auto mb-4">
+                💸
+              </div>
+              <p className="display-sm text-lg">No payments yet</p>
+              <p className="text-sm text-muted mt-1">Record the first one above</p>
             </div>
           )}
 
           {payments.length > 0 && !showForm && (
-            <div className="rule-fancy my-6" />
+            <p className="text-xs uppercase tracking-widest text-muted font-semibold pt-3 pb-1">
+              History · {payments.length} entries
+            </p>
           )}
 
           {payments.map((p, i) => (
-            <div key={p.id} className="bg-paper border border-rule p-4 hover:border-ink transition relative">
-              <div className="absolute top-2 right-3 mono text-[10px] tabular text-ink-faint">
-                №{String(payments.length - i).padStart(3, '0')}
+            <div key={p.id} className="bg-canvas rounded-3xl p-4 flex items-center justify-between hover:bg-surface-2/60 transition group">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-moss/15 text-moss rounded-2xl flex items-center justify-center">
+                  <CheckCircle2 size={16} />
+                </div>
+                <div>
+                  <p className="font-bold text-ink display-sm">
+                    PKR <span className="tabular">{p.amount.toLocaleString()}</span>
+                  </p>
+                  <p className="text-xs text-muted">
+                    {new Date(p.paid_on).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · {p.method || '—'}
+                  </p>
+                  {p.note && <p className="text-xs text-soft italic mt-1">"{p.note}"</p>}
+                </div>
               </div>
-              <p className="serif text-2xl tabular leading-none">
-                <span className="serif-italic text-ink-faint text-lg">₨</span> {p.amount.toLocaleString()}
-              </p>
-              <p className="annotation text-xs mt-2">
-                {new Date(p.paid_on).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })} · received via <span className="not-italic font-medium text-ink-2">{p.method || 'unknown'}</span>
-              </p>
-              {p.note && <p className="serif-italic text-sm text-ink-soft mt-2 pt-2 border-t border-rule">"{p.note}"</p>}
+              <span className="mono text-[10px] text-soft tabular">
+                #{String(payments.length - i).padStart(3, '0')}
+              </span>
             </div>
           ))}
         </div>
@@ -129,11 +144,12 @@ export function PaymentDrawer({ student, onClose }: { student: Student; onClose:
   )
 }
 
-function Stat({ label, value, accent, mono }: { label: string; value: string; accent?: string; mono?: boolean }) {
+function SummaryCard({ label, value, accent, mono }: { label: string; value: string; accent?: string; mono?: boolean }) {
+  const tint = accent === 'moss' ? 'text-moss' : 'text-ink'
   return (
-    <div>
-      <p className="mono text-[9px] tracking-widest2 uppercase text-ink-soft">{label}</p>
-      <p className={`${mono ? 'mono text-xs' : 'serif text-lg'} ${accent ?? 'text-ink'} tabular leading-tight mt-1`}>{value}</p>
+    <div className="bg-canvas rounded-2xl p-3">
+      <p className="text-[10px] uppercase tracking-wider text-muted font-semibold">{label}</p>
+      <p className={`${mono ? 'mono text-xs' : 'font-bold text-sm'} ${tint} mt-1 tabular`}>{value}</p>
     </div>
   )
 }
@@ -141,10 +157,10 @@ function Stat({ label, value, accent, mono }: { label: string; value: string; ac
 function DrawerField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mono text-[10px] tracking-widest2 uppercase text-ink-soft">{label}</span>
-      <div className="mt-1.5">{children}</div>
+      <span className="text-[11px] font-semibold text-muted block mb-1">{label}</span>
+      {children}
     </label>
   )
 }
 
-const drawerInput = "w-full bg-paper border-0 border-b border-rule-strong focus:border-ink outline-none px-0 py-2 text-ink text-sm mono transition"
+const drawerInput = "w-full bg-surface border border-line focus:border-ink rounded-2xl px-3.5 py-2.5 text-sm outline-none transition placeholder-soft"

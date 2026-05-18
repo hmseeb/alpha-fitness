@@ -1,73 +1,82 @@
+import { Users, AlertTriangle, TrendingUp, ArrowUpRight } from 'lucide-react'
 import type { DashStats } from '../types'
 
-export function Dashboard({ stats }: { stats: DashStats }) {
-  const cards = [
-    {
-      ordinal: 'I',
-      label: 'Active members',
-      sub: 'currently enrolled',
-      value: stats.active.toString().padStart(2, '0'),
-      footnote: 'inclusive of all tiers',
-      delay: 'ink-1',
-      accent: 'text-ink',
-    },
-    {
-      ordinal: 'II',
-      label: 'In arrears',
-      sub: stats.overdue > 0 ? 'requires attention' : 'none — well in hand',
-      value: stats.overdue.toString().padStart(2, '0'),
-      footnote: 'fees overdue past next-due date',
-      delay: 'ink-2',
-      accent: stats.overdue > 0 ? 'text-oxblood' : 'text-olive',
-    },
-    {
-      ordinal: 'III',
-      label: 'Receipts this month',
-      sub: 'as on today',
-      value: `₨ ${stats.revenue.toLocaleString()}`,
-      footnote: 'sum of recorded payments',
-      delay: 'ink-3',
-      accent: 'text-ink',
-    },
-  ]
-
+export function Dashboard({ stats }: { stats: DashStats; totalMembers?: number }) {
   return (
     <section>
-      <div className="flex items-end justify-between mb-6 pb-3 border-b border-ink">
-        <div className="flex items-baseline gap-4">
-          <p className="mono text-[10px] tracking-widest2 uppercase text-ink-soft">§ 01</p>
-          <h2 className="serif text-4xl tracking-tight">
-            The <span className="serif-italic">snapshot.</span>
-          </h2>
-          <p className="annotation text-sm">— a summary of present standing</p>
+      <div className="flex items-end justify-between mb-5">
+        <div>
+          <h2 className="display-md text-[2.5rem]">Today.</h2>
+          <p className="text-sm text-muted mt-1">
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
         </div>
-        <p className="annotation text-xs">
-          Recorded {new Date().toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-l border-r border-rule">
-        {cards.map((c, i) => (
-          <div
-            key={c.ordinal}
-            className={`ink-in ${c.delay} relative px-8 py-10 ${i < cards.length - 1 ? 'border-r border-rule' : ''}`}
-          >
-            <div className="flex items-start justify-between mb-8">
-              <span className="serif-italic text-2xl text-ink-faint">{c.ordinal}.</span>
-              <span className="mono text-[10px] tracking-widest2 uppercase text-ink-soft">
-                {c.label}
-              </span>
-            </div>
-            <p className={`serif text-7xl tabular leading-none tracking-tight ${c.accent}`}>
-              {c.value}
-            </p>
-            <div className="mt-6 pt-4 border-t border-rule">
-              <p className="serif-italic text-sm text-ink-soft">{c.sub}</p>
-              <p className="annotation text-[11px] mt-1">— {c.footnote}</p>
-            </div>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard
+          label="Active members"
+          value={stats.active}
+          icon={Users}
+          accent="lime"
+          delay="pop-1"
+          sub="enrolled & training"
+        />
+        <StatCard
+          label="Overdue"
+          value={stats.overdue}
+          icon={AlertTriangle}
+          accent={stats.overdue > 0 ? 'coral' : 'moss'}
+          delay="pop-2"
+          sub={stats.overdue > 0 ? 'fees past due' : 'all caught up'}
+        />
+        <StatCard
+          label="This month"
+          value={stats.revenue}
+          icon={TrendingUp}
+          accent="azure"
+          delay="pop-3"
+          sub="received in fees"
+          isCurrency
+        />
       </div>
     </section>
+  )
+}
+
+function StatCard({ label, value, icon: Icon, accent, delay, sub, isCurrency }: {
+  label: string; value: number; icon: any; accent: 'lime' | 'coral' | 'azure' | 'moss'; delay: string; sub: string; isCurrency?: boolean
+}) {
+  const accentMap: Record<string, { chip: string; iconBg: string; iconColor: string; ring: string }> = {
+    lime:   { chip: 'bg-lime',   iconBg: 'bg-ink',   iconColor: 'text-lime',  ring: 'from-lime/30' },
+    coral:  { chip: 'bg-coral/15 text-coral',  iconBg: 'bg-coral',  iconColor: 'text-white', ring: 'from-coral/15' },
+    azure:  { chip: 'bg-azure/15 text-azure',  iconBg: 'bg-azure',  iconColor: 'text-white', ring: 'from-azure/15' },
+    moss:   { chip: 'bg-moss/15 text-moss',   iconBg: 'bg-moss',   iconColor: 'text-white', ring: 'from-moss/15' },
+  }
+  const c = accentMap[accent]
+
+  return (
+    <div className={`stat-card pop ${delay} relative bg-surface rounded-4xl lift p-7 overflow-hidden`}>
+      <div className={`absolute -top-20 -right-20 w-48 h-48 rounded-full bg-gradient-to-br ${c.ring} to-transparent blur-2xl`} />
+
+      <div className="relative flex items-start justify-between mb-9">
+        <div className={`w-11 h-11 ${c.iconBg} rounded-2xl flex items-center justify-center`}>
+          <Icon size={18} className={c.iconColor} strokeWidth={2.2} />
+        </div>
+        <span className="text-xs font-semibold text-muted uppercase tracking-wider flex items-center gap-1">
+          {label}
+          <ArrowUpRight size={12} className="opacity-40" />
+        </span>
+      </div>
+
+      <p className="display text-7xl tabular leading-none">
+        {isCurrency && <span className="text-2xl text-muted align-top mr-1.5">PKR</span>}
+        {isCurrency ? value.toLocaleString() : value.toString().padStart(2, '0')}
+      </p>
+
+      <p className="text-sm text-muted mt-5 pt-5 border-t border-line">
+        {sub}
+      </p>
+    </div>
   )
 }
