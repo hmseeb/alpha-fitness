@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Loader2, ArrowRight } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import type { AuthUser } from '../types'
 
 export function Login({ onSignedIn }: { onSignedIn: (u: AuthUser) => void }) {
@@ -16,112 +16,145 @@ export function Login({ onSignedIn }: { onSignedIn: (u: AuthUser) => void }) {
       const user = mode === 'signin'
         ? await window.api.auth.signIn(email, password)
         : await window.api.auth.signUp(email, password)
-      if (!user?.id) throw new Error('check your email to confirm and try again.')
+      if (!user?.id) throw new Error('Check your email to confirm and try again.')
       onSignedIn(user)
     } catch (e: any) {
-      setErr(e?.message ?? 'login failed')
+      setErr(e?.message ?? 'Authentication failed.')
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <div className="grain min-h-screen flex bg-ink-0 text-white relative overflow-hidden">
-      {/* LEFT — brand panel */}
-      <div className="hidden md:flex flex-col flex-1 relative stripes border-r border-line">
-        <div className="absolute inset-0 bg-gradient-to-br from-crimson-deep/30 via-transparent to-transparent pointer-events-none" />
-        <div className="absolute -top-32 -right-32 w-[480px] h-[480px] rounded-full bg-crimson/10 blur-3xl" />
-        <div className="absolute bottom-0 right-0 left-0 h-1/2 bg-gradient-to-t from-ink-0 to-transparent" />
+    <div className="paper min-h-screen bg-paper text-ink flex flex-col">
+      {/* MASTHEAD */}
+      <header className="border-b-4 border-double border-ink">
+        <div className="max-w-5xl mx-auto px-10 py-5 flex items-center justify-between">
+          <p className="mono text-[10px] tracking-widest2 uppercase text-ink-soft">
+            Vol. I · Issue 02 · Established Jampur 2026
+          </p>
+          <p className="mono text-[10px] tracking-widest2 uppercase text-ink-soft">
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long' })}
+          </p>
+        </div>
+      </header>
 
-        <div className="relative z-10 p-10 flex flex-col h-full justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-2 bg-crimson rec-dot rounded-full" />
-            <span className="mono text-xs tracking-widest2 text-zinc-400 uppercase">est. jampur</span>
+      <main className="flex-1 max-w-5xl mx-auto w-full px-10 py-14 grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+        {/* LEFT — masthead title */}
+        <div className="md:col-span-7 ink-in">
+          <p className="mono text-[10px] tracking-widest2 uppercase text-oxblood mb-6 flex items-center gap-3">
+            <span className="inline-block h-px w-8 bg-oxblood" />
+            The Members' Register
+          </p>
+
+          <h1 className="serif text-[6rem] md:text-[8.5rem] leading-[0.85] tracking-tight text-ink">
+            Alpha
+            <br />
+            <span className="serif-italic text-oxblood">Fitness</span>
+            <br />
+            <span className="text-ink-soft">Jampur</span>
+            <span className="text-oxblood">.</span>
+          </h1>
+
+          <div className="mt-8 max-w-md">
+            <div className="rule-fancy mb-6" />
+            <p className="serif-body text-base text-ink-2 leading-relaxed dropcap">
+              A bound ledger of every member who has crossed the threshold of our gymnasium — their dues, attendance and standing — kept current by the proprietor.
+            </p>
           </div>
 
-          <div className="space-y-6 rise">
-            <div className="display text-[10vw] md:text-[7rem] leading-[0.85] tracking-tight">
-              <div>ALPHA</div>
-              <div className="text-crimson">FITNESS</div>
-              <div className="text-zinc-500 text-[4rem]">JAMPUR</div>
-            </div>
-            <div className="flex items-center gap-4 max-w-md">
-              <div className="h-px flex-1 bg-line" />
-              <p className="mono text-[10px] tracking-widest2 uppercase text-zinc-500">
-                member operations console
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-xs mono text-zinc-600 uppercase tracking-widest2">
-            <span>v0.2 / offline-first</span>
-            <span>encrypted ↗</span>
+          <div className="mt-8 flex items-center gap-6 text-xs annotation">
+            <span>— Est. <span className="lining">2026</span></span>
+            <span className="text-rule-strong">·</span>
+            <span>Offline-keeping, cloud-bound.</span>
           </div>
         </div>
-      </div>
 
-      {/* RIGHT — auth */}
-      <div className="flex-1 flex items-center justify-center p-8 relative">
-        <div className="w-full max-w-sm rise rise-2">
-          <div className="mb-10">
-            <p className="mono text-[10px] tracking-widest2 uppercase text-crimson mb-3">
-              {mode === 'signin' ? '01 / authenticate' : '01 / register'}
+        {/* RIGHT — sign-in card */}
+        <div className="md:col-span-5 ink-in ink-2">
+          <div className="bg-paper-2 border border-rule p-8 shadow-paper">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-rule">
+              <p className="mono text-[10px] tracking-widest2 uppercase text-ink-soft">
+                {mode === 'signin' ? '§ Sign in' : '§ Register'}
+              </p>
+              <p className="mono text-[10px] tracking-widest2 uppercase text-ink-faint">
+                p. 001
+              </p>
+            </div>
+
+            <h2 className="serif text-4xl leading-tight mb-2">
+              {mode === 'signin' ? (
+                <>Welcome <span className="serif-italic">back,</span></>
+              ) : (
+                <>A new <span className="serif-italic">account.</span></>
+              )}
+            </h2>
+            <p className="serif-body text-ink-soft text-sm mb-7">
+              {mode === 'signin' ? 'Please enter your credentials below.' : 'Choose an email and a password of at least six characters.'}
             </p>
-            <h1 className="display text-6xl tracking-tight leading-none">
-              {mode === 'signin' ? 'STEP IN.' : 'CLAIM IT.'}
-            </h1>
-            <p className="text-zinc-500 mt-3 text-sm">
-              {mode === 'signin' ? 'access your roster, payments, and the lot.' : 'create your operator account.'}
-            </p>
-          </div>
 
-          <form onSubmit={submit} className="space-y-5">
-            <Input label="email" type="email" value={email} onChange={setEmail} autoFocus />
-            <Input label="password" type="password" value={password} onChange={setPassword} minLength={6} />
+            <form onSubmit={submit} className="space-y-5">
+              <Field label="Email" type="email" value={email} onChange={setEmail} autoFocus />
+              <Field label="Password" type="password" value={password} onChange={setPassword} minLength={6} />
 
-            {err && (
-              <div className="mono text-[11px] uppercase tracking-wider text-crimson border-l-2 border-crimson pl-3 py-1">
-                {err}
-              </div>
-            )}
+              {err && (
+                <p className="serif-italic text-sm text-oxblood border-l-2 border-oxblood pl-3">
+                  {err}
+                </p>
+              )}
 
-            <button
-              type="submit" disabled={busy}
-              className="group w-full bg-crimson hover:bg-crimson-glow disabled:opacity-50 text-white py-4 px-6 flex items-center justify-between transition shadow-glow"
-            >
-              <span className="display text-2xl tracking-wider">
-                {mode === 'signin' ? 'ENTER' : 'CREATE'}
-              </span>
-              {busy ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={20} className="group-hover:translate-x-1 transition" />}
-            </button>
+              <button
+                type="submit" disabled={busy}
+                className="group w-full bg-ink text-paper hover:bg-oxblood disabled:opacity-50 transition-colors py-4 px-6 flex items-center justify-between"
+              >
+                <span className="serif text-xl tracking-tight">
+                  {mode === 'signin' ? 'Enter the register' : 'Create account'}
+                </span>
+                {busy ? <Loader2 size={18} className="animate-spin" /> : <span className="serif-italic text-lg">→</span>}
+              </button>
+            </form>
+
+            <div className="rule-fancy rule-fancy-paper2 mt-8 mb-5" />
 
             <button
               type="button"
               onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-              className="block w-full text-center mono text-[10px] tracking-widest2 uppercase text-zinc-500 hover:text-white transition pt-2"
+              className="block w-full text-center serif-italic text-sm text-ink-soft hover:text-ink transition"
             >
-              {mode === 'signin' ? '↓ create new account' : '↑ sign in instead'}
+              {mode === 'signin' ? 'Or, register a new account →' : '← Already an account? Sign in.'}
             </button>
-          </form>
+          </div>
+
+          <p className="mt-4 text-center mono text-[10px] tracking-widest2 uppercase text-ink-faint">
+            entries are kept locally · synchronised to cloud
+          </p>
         </div>
-      </div>
+      </main>
+
+      <footer className="border-t border-rule">
+        <div className="max-w-5xl mx-auto px-10 py-4 flex items-center justify-between mono text-[10px] tracking-widest2 uppercase text-ink-faint">
+          <span>Printed in single copy</span>
+          <span>—— ✦ ——</span>
+          <span>The proprietor's edition</span>
+        </div>
+      </footer>
     </div>
   )
 }
 
-function Input({ label, type, value, onChange, autoFocus, minLength }: {
+function Field({ label, type, value, onChange, autoFocus, minLength }: {
   label: string; type: string; value: string; onChange: (v: string) => void; autoFocus?: boolean; minLength?: number
 }) {
   return (
     <label className="block group">
-      <span className="mono text-[10px] tracking-widest2 uppercase text-zinc-500 group-focus-within:text-crimson transition">
-        / {label}
+      <span className="mono text-[10px] tracking-widest2 uppercase text-ink-soft group-focus-within:text-oxblood transition">
+        {label}
       </span>
       <input
         type={type} required value={value} minLength={minLength}
         autoFocus={autoFocus}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-2 w-full bg-transparent border-0 border-b-2 border-line focus:border-crimson outline-none py-2 text-lg text-white placeholder-zinc-700 transition"
+        className="mt-1 w-full bg-transparent border-0 border-b border-rule-strong focus:border-ink outline-none py-2 serif-body text-lg text-ink placeholder-ink-faint transition"
       />
     </label>
   )

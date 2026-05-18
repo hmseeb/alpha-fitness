@@ -12,31 +12,31 @@ export function SyncBadge({ onSignOut }: { onSignOut: () => void }) {
   }, [])
 
   const cfg = {
-    idle: { dot: 'bg-emerald-400', label: 'synced', text: 'text-emerald-400', spin: false },
-    syncing: { dot: 'bg-blue-400 rec-dot', label: 'syncing', text: 'text-blue-400', spin: true },
-    offline: { dot: 'bg-zinc-500', label: 'offline', text: 'text-zinc-500', spin: false },
-    error: { dot: 'bg-amber-400 rec-dot', label: 'retry', text: 'text-amber-400', spin: false },
+    idle: { dot: 'bg-olive', label: 'In good order', color: 'text-olive' },
+    syncing: { dot: 'bg-teal ink-pulse', label: 'Synchronising', color: 'text-teal' },
+    offline: { dot: 'bg-ink-faint', label: 'Off the wire', color: 'text-ink-soft' },
+    error: { dot: 'bg-oxblood ink-pulse', label: 'Awaiting retry', color: 'text-oxblood' },
   }[s.status]
 
   return (
     <div className="flex items-center gap-2">
       <button
         onClick={() => window.api.sync.now()}
-        className="group flex items-center gap-2.5 px-3.5 py-2.5 border border-line hover:border-line-bright bg-ink-1 hover:bg-ink-2 transition"
-        title={s.lastError ?? (s.lastSyncedAt ? `last synced ${new Date(s.lastSyncedAt).toLocaleTimeString()}` : 'sync now')}
+        className="flex items-center gap-2.5 px-3.5 py-2.5 border border-rule hover:border-ink bg-paper hover:bg-paper-2 transition"
+        title={s.lastError ?? (s.lastSyncedAt ? `Last synchronised ${new Date(s.lastSyncedAt).toLocaleTimeString()}` : 'Synchronise')}
       >
         <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-        <span className={`mono text-[10px] tracking-widest2 uppercase ${cfg.text}`}>{cfg.label}</span>
+        <span className={`mono text-[10px] tracking-widest2 uppercase ${cfg.color}`}>{cfg.label}</span>
         {s.pending > 0 && (
-          <span className="mono text-[10px] text-zinc-500 border-l border-line pl-2 tabular">
+          <span className="mono text-[10px] text-ink-soft border-l border-rule pl-2 tabular">
             {String(s.pending).padStart(2, '0')}
           </span>
         )}
       </button>
       <button
         onClick={onSignOut}
-        className="border border-line hover:border-crimson hover:text-crimson p-2.5 text-zinc-500 transition"
-        title="sign out"
+        className="border border-rule hover:border-oxblood hover:text-oxblood p-2.5 text-ink-soft transition"
+        title="Sign out"
       >
         <LogOut size={14} />
       </button>

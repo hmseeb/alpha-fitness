@@ -29,8 +29,7 @@ export default function App() {
       window.api.students.list(q || undefined),
       window.api.dashboard.stats(),
     ])
-    setStudents(list)
-    setStats(s)
+    setStudents(list); setStats(s)
   }, [q, user?.id])
 
   useEffect(() => { refresh() }, [refresh])
@@ -43,11 +42,8 @@ export default function App() {
 
   if (user === undefined) {
     return (
-      <div className="min-h-screen bg-ink-0 flex items-center justify-center">
-        <div className="mono text-xs uppercase tracking-widest2 text-zinc-600 flex items-center gap-3">
-          <span className="w-1.5 h-1.5 bg-crimson rec-dot rounded-full" />
-          loading
-        </div>
+      <div className="min-h-screen bg-paper flex items-center justify-center">
+        <p className="serif-italic text-ink-soft">Opening the register…</p>
       </div>
     )
   }
@@ -59,87 +55,90 @@ export default function App() {
     if (!filePath) return
     const buf = exportToExcel(all)
     await window.api.files.writeBuffer(filePath, buf)
-    alert('exported ✓')
+    alert('Exported.')
   }
 
-  const onSignOut = async () => {
-    await window.api.auth.signOut()
-    setUser(null)
-  }
+  const onSignOut = async () => { await window.api.auth.signOut(); setUser(null) }
 
   return (
-    <div className="grain min-h-screen bg-ink-0 text-white">
-      {/* HEADER — brutalist branding bar */}
-      <header className="relative border-b border-line">
-        <div className="absolute inset-0 stripes pointer-events-none" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-crimson/40 to-transparent" />
-
-        <div className="relative max-w-[1600px] mx-auto px-8 py-6 flex items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <div className="flex items-center gap-3 pr-5 border-r border-line">
-              <div className="w-2 h-2 bg-crimson rec-dot rounded-full" />
-              <span className="mono text-[10px] tracking-widest2 uppercase text-zinc-500">live</span>
-            </div>
-            <div>
-              <h1 className="display text-3xl leading-none tracking-tight">
-                ALPHA FITNESS <span className="text-crimson">/</span> JAMPUR
-              </h1>
-              <p className="mono text-[10px] tracking-widest2 uppercase text-zinc-600 mt-1">
-                member operations console · v0.2
-              </p>
-            </div>
+    <div className="paper min-h-screen bg-paper text-ink">
+      {/* MASTHEAD — like a newspaper banner */}
+      <header className="border-b-4 border-double border-ink relative">
+        <div className="max-w-[1500px] mx-auto px-10 pt-5 pb-3">
+          <div className="flex items-center justify-between mono text-[10px] tracking-widest2 uppercase text-ink-soft pb-3 border-b border-rule">
+            <span className="flex items-center gap-3">
+              <span className="inline-block w-1.5 h-1.5 bg-oxblood ink-pulse rounded-full" />
+              Live edition
+            </span>
+            <span>Volume I · No. 02</span>
+            <span>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <SyncBadge onSignOut={onSignOut} />
-            <button
-              onClick={onExport}
-              className="group flex items-center gap-2 px-4 py-2.5 border border-line hover:border-line-bright hover:bg-ink-2 transition mono text-[10px] tracking-widest2 uppercase"
-            >
-              <Download size={13} />
-              <span>export</span>
-            </button>
-            <button
-              onClick={() => setEditing('new')}
-              className="group flex items-center gap-2 px-5 py-2.5 bg-crimson hover:bg-crimson-glow transition mono text-[10px] tracking-widest2 uppercase font-bold shadow-glow"
-            >
-              <Plus size={14} />
-              <span>add member</span>
-            </button>
+          <div className="flex items-end justify-between pt-4">
+            <div>
+              <h1 className="serif text-[3.5rem] md:text-[4.5rem] leading-[0.85] tracking-tight">
+                Alpha Fitness <span className="serif-italic text-oxblood">Jampur</span>
+                <span className="text-oxblood">.</span>
+              </h1>
+              <p className="annotation mt-1 text-sm">— The proprietor's members register</p>
+            </div>
+
+            <div className="flex items-center gap-2 pb-2">
+              <SyncBadge onSignOut={onSignOut} />
+              <button
+                onClick={onExport}
+                className="px-4 py-2.5 border border-rule hover:border-ink hover:bg-paper-2 transition mono text-[10px] tracking-widest2 uppercase flex items-center gap-2"
+              >
+                <Download size={12} /> Export
+              </button>
+              <button
+                onClick={() => setEditing('new')}
+                className="px-5 py-2.5 bg-ink text-paper hover:bg-oxblood transition mono text-[10px] tracking-widest2 uppercase flex items-center gap-2"
+              >
+                <Plus size={13} /> New member
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-[1600px] mx-auto px-8 py-8 space-y-8">
+      <main className="max-w-[1500px] mx-auto px-10 py-12 space-y-14">
         <Dashboard stats={stats} />
 
-        <section className="rise rise-4">
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <p className="mono text-[10px] tracking-widest2 uppercase text-zinc-500">/ 02</p>
-              <h2 className="display text-4xl tracking-tight leading-none mt-1">THE ROSTER</h2>
+        <section className="ink-in ink-4">
+          <div className="flex items-end justify-between mb-6 pb-3 border-b border-ink">
+            <div className="flex items-baseline gap-4">
+              <p className="mono text-[10px] tracking-widest2 uppercase text-ink-soft">§ 02</p>
+              <h2 className="serif text-4xl tracking-tight">
+                The <span className="serif-italic">roster.</span>
+              </h2>
+              <p className="annotation text-sm">— in order of enrolment</p>
             </div>
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
               <input
-                placeholder="search name or contact..."
+                placeholder="Search the register…"
                 value={q} onChange={(e) => setQ(e.target.value)}
-                className="pl-9 pr-4 py-2.5 bg-ink-1 border border-line focus:border-crimson outline-none text-sm w-80 placeholder-zinc-700 mono"
+                className="pl-9 pr-4 py-2 bg-paper-2 border border-rule focus:border-ink outline-none serif-body italic text-sm w-80 placeholder-ink-faint transition"
               />
             </div>
           </div>
 
-          <div className="bg-ink-1 border border-line">
-            <StudentTable
-              students={students}
-              onEdit={(s) => setEditing(s)}
-              onOpenPayments={(s) => setDrawerStudent(s)}
-              onDelete={async (s) => {
-                if (confirm(`delete ${s.name}?`)) { await window.api.students.remove(s.id); refresh() }
-              }}
-            />
-          </div>
+          <StudentTable
+            students={students}
+            onEdit={(s) => setEditing(s)}
+            onOpenPayments={(s) => setDrawerStudent(s)}
+            onDelete={async (s) => {
+              if (confirm(`Remove ${s.name} from the register?`)) { await window.api.students.remove(s.id); refresh() }
+            }}
+          />
         </section>
+
+        <footer className="border-t-2 border-double border-rule-strong pt-6 flex items-center justify-between annotation text-xs">
+          <span>Folio · {students.length.toString().padStart(3, '0')}</span>
+          <span>—— ❦ ——</span>
+          <span>End of present entries</span>
+        </footer>
       </main>
 
       {editing !== null && (

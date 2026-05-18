@@ -4,38 +4,43 @@ export default {
   theme: {
     extend: {
       colors: {
+        paper: {
+          DEFAULT: '#faf6ec',
+          2: '#f3ecd8',
+          3: '#ebe2c8',
+        },
         ink: {
-          0: '#0a0a0b',
-          1: '#111113',
-          2: '#18181b',
-          3: '#1f1f23',
-          4: '#27272a',
-          5: '#3f3f46',
+          DEFAULT: '#0d0d0c',
+          2: '#2a2925',
+          soft: '#6b6b65',
+          faint: '#a8a59e',
         },
-        line: {
-          DEFAULT: '#2a2a2f',
-          bright: '#3f3f46',
+        rule: {
+          DEFAULT: '#d4cdb8',
+          strong: '#bab39c',
         },
-        crimson: {
-          DEFAULT: '#ef4444',
-          deep: '#b91c1c',
-          glow: '#dc2626',
-          dim: '#7f1d1d',
+        oxblood: {
+          DEFAULT: '#8a1c1c',
+          deep: '#5e1313',
         },
-        lime: { soft: '#d9f99d' },
+        mustard: {
+          DEFAULT: '#b88a1f',
+          soft: '#d4af5c',
+        },
+        olive: '#5a6b3f',
+        teal: '#2c5d63',
       },
       fontFamily: {
-        display: ['"Bebas Neue"', 'sans-serif'],
-        sans: ['"Inter Tight"', 'system-ui', 'sans-serif'],
+        serif: ['Fraunces', 'serif'],
+        sans: ['Geist', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
-      boxShadow: {
-        glow: '0 0 0 1px rgba(239, 68, 68, 0.35), 0 8px 30px -8px rgba(239, 68, 68, 0.4)',
-        sharp: '0 1px 0 0 rgba(255,255,255,0.04), 0 0 0 1px rgba(255,255,255,0.04)',
-        deep: '0 30px 60px -20px rgba(0, 0, 0, 0.8)',
-      },
       letterSpacing: {
-        widest2: '0.2em',
+        widest2: '0.18em',
+      },
+      boxShadow: {
+        paper: '0 1px 0 0 rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.04)',
+        deep: '0 30px 60px -25px rgba(13, 13, 12, 0.25)',
       },
     },
   },

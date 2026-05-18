@@ -22,15 +22,15 @@ export function StudentAvatar({ student, size = 40, className = '' }: Props) {
         src={url}
         alt={student.name}
         style={{ width: px, height: px }}
-        className={`rounded-full object-cover border border-line ${className}`}
+        className={`object-cover border border-rule-strong ${className}`}
       />
     )
   }
   const initial = student.name?.[0]?.toUpperCase() ?? '?'
   return (
     <div
-      style={{ width: px, height: px, fontSize: Math.round(size * 0.4) }}
-      className={`rounded-full bg-ink-2 border border-line flex items-center justify-center text-zinc-500 font-display tracking-wider ${className}`}
+      style={{ width: px, height: px, fontSize: Math.round(size * 0.45) }}
+      className={`bg-paper-2 border border-rule-strong flex items-center justify-center text-ink-soft serif font-medium ${className}`}
     >
       {initial}
     </div>
