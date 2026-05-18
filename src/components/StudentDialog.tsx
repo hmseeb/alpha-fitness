@@ -16,6 +16,7 @@ const empty: Partial<Student> = {
   paid_through: '',
   remaining: 0,
   photo_path: null,
+  photo_remote_path: null,
 }
 
 function addMonth(dateStr: string): string {
@@ -38,107 +39,175 @@ export function StudentDialog({ student, onClose, onSaved }: { student: Student 
     const src = await window.api.dialog.pickImage()
     if (!src) return
     const dest = await window.api.photos.save(src)
-    setData((d) => ({ ...d, photo_path: dest }))
+    setData((d) => ({ ...d, photo_path: dest, photo_remote_path: null }))
   }
 
   const save = async () => {
-    if (!data.name?.trim()) { alert('Name is required'); return }
+    if (!data.name?.trim()) { alert('name required'); return }
     if (isEdit) await window.api.students.update(student!.id, data)
     else await window.api.students.create(data)
     onSaved()
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-800">{isEdit ? 'Edit Student' : 'New Student'}</h3>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
-        </div>
-
-        <div className="p-6 space-y-5">
-          <div className="flex items-center gap-4">
-            <StudentAvatar student={{ photo_path: data.photo_path, photo_remote_path: data.photo_remote_path, name: data.name || '' }} size={96} className="!rounded-2xl" />
-            <button onClick={pickPhoto} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">
-              <Upload size={16} /> {data.photo_path || data.photo_remote_path ? 'Change photo' : 'Upload photo'}
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+      <div className="grain bg-ink-0 border border-line shadow-deep w-full max-w-3xl max-h-[90vh] overflow-y-auto rise">
+        {/* HEADER */}
+        <div className="sticky top-0 bg-ink-0/95 backdrop-blur border-b border-line z-10">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-crimson/40 to-transparent" />
+          <div className="px-8 py-5 flex items-center justify-between">
+            <div>
+              <p className="mono text-[10px] tracking-widest2 uppercase text-crimson mb-1">
+                {isEdit ? '/ edit member' : '/ new member'}
+              </p>
+              <h3 className="display text-3xl tracking-tight leading-none">
+                {isEdit ? (student?.name?.toUpperCase() ?? 'EDIT') : 'ROSTER ENTRY'}
+              </h3>
+            </div>
+            <button onClick={onClose} className="border border-line hover:border-crimson hover:text-crimson p-2.5 text-zinc-500 transition">
+              <X size={16} />
             </button>
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Student Name" required>
-              <input className={inputCls} value={data.name ?? ''} onChange={(e) => setData({ ...data, name: e.target.value })} />
-            </Field>
-            <Field label="Contact Number">
-              <input className={inputCls} value={data.contact ?? ''} onChange={(e) => setData({ ...data, contact: e.target.value })} placeholder="0333-8325556" />
-            </Field>
-
-            <Field label="Time Table">
-              <select className={inputCls} value={data.time_table} onChange={(e) => setData({ ...data, time_table: e.target.value as any })}>
-                <option>Morning</option>
-                <option>Evening</option>
-              </select>
-            </Field>
-            <Field label="Membership">
-              <select className={inputCls} value={data.membership} onChange={(e) => setData({ ...data, membership: e.target.value })}>
-                <option>Normal</option>
-                <option>Premium</option>
-                <option>VIP</option>
-              </select>
-            </Field>
-
-            <Field label="Fees (PKR)">
-              <input type="number" className={inputCls} value={data.fees ?? 0} onChange={(e) => setData({ ...data, fees: +e.target.value })} />
-            </Field>
-            <Field label="Month">
-              <input className={inputCls} value={data.month ?? ''} onChange={(e) => setData({ ...data, month: e.target.value })} />
-            </Field>
-
-            <Field label="Entry Date">
-              <input type="date" className={inputCls} value={data.entry_date ?? ''} onChange={(e) => setData({ ...data, entry_date: e.target.value, next_fees_date: addMonth(e.target.value) })} />
-            </Field>
-            <Field label="Next Fees Date">
-              <input type="date" className={inputCls} value={data.next_fees_date ?? ''} onChange={(e) => setData({ ...data, next_fees_date: e.target.value })} />
-            </Field>
-
-            <Field label="Registration Fee">
-              <select className={inputCls} value={data.reg_fee_status} onChange={(e) => setData({ ...data, reg_fee_status: e.target.value as any })}>
-                <option>Nill</option>
-                <option>Paid</option>
-              </select>
-            </Field>
-            <Field label="Paid Through">
-              <input className={inputCls} value={data.paid_through ?? ''} onChange={(e) => setData({ ...data, paid_through: e.target.value })} placeholder="Meezan Bank / Cash" />
-            </Field>
-
-            <Field label="Remaining (PKR)">
-              <input type="number" className={inputCls} value={data.remaining ?? 0} onChange={(e) => setData({ ...data, remaining: +e.target.value })} />
-            </Field>
-            <Field label="SR No">
-              <input type="number" className={inputCls} value={data.sr_no ?? ''} onChange={(e) => setData({ ...data, sr_no: +e.target.value })} placeholder="auto" />
-            </Field>
-          </div>
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-slate-100 px-6 py-4 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg hover:bg-slate-100 text-slate-700 font-medium">Cancel</button>
-          <button onClick={save} className="px-5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold shadow">
-            {isEdit ? 'Save Changes' : 'Create Student'}
-          </button>
+        {/* BODY */}
+        <div className="p-8 space-y-8">
+          {/* Photo block */}
+          <div className="flex items-center gap-6 pb-6 border-b border-line">
+            <div className="relative">
+              <StudentAvatar
+                student={{ photo_path: data.photo_path, photo_remote_path: data.photo_remote_path, name: data.name || '' }}
+                size={96}
+                className="!rounded-none border-2 border-line"
+              />
+              <div className="absolute -top-2 -right-2 w-4 h-4 bg-crimson border-2 border-ink-0" />
+            </div>
+            <div className="flex-1">
+              <p className="mono text-[10px] tracking-widest2 uppercase text-zinc-500 mb-2">/ photo</p>
+              <button onClick={pickPhoto} className="flex items-center gap-2 px-4 py-2.5 border border-line hover:border-line-bright bg-ink-1 hover:bg-ink-2 transition mono text-[10px] tracking-widest2 uppercase">
+                <Upload size={13} />
+                {data.photo_path || data.photo_remote_path ? 'replace' : 'upload'}
+              </button>
+            </div>
+          </div>
+
+          {/* Identity */}
+          <FormSection label="01 · identity">
+            <div className="grid grid-cols-2 gap-5">
+              <Field label="full name" required>
+                <Input value={data.name ?? ''} onChange={(v) => setData({ ...data, name: v })} placeholder="ammar ali" />
+              </Field>
+              <Field label="contact">
+                <Input value={data.contact ?? ''} onChange={(v) => setData({ ...data, contact: v })} placeholder="0333-8325556" mono />
+              </Field>
+              <Field label="sr no">
+                <Input type="number" value={String(data.sr_no ?? '')} onChange={(v) => setData({ ...data, sr_no: +v })} placeholder="auto" mono />
+              </Field>
+              <Field label="tier">
+                <Select value={data.membership ?? 'Normal'} onChange={(v) => setData({ ...data, membership: v })} options={['Normal', 'Premium', 'VIP']} />
+              </Field>
+            </div>
+          </FormSection>
+
+          {/* Schedule */}
+          <FormSection label="02 · schedule">
+            <div className="grid grid-cols-2 gap-5">
+              <Field label="time table">
+                <Select value={data.time_table ?? 'Evening'} onChange={(v) => setData({ ...data, time_table: v as any })} options={['Morning', 'Evening']} />
+              </Field>
+              <Field label="month">
+                <Input value={data.month ?? ''} onChange={(v) => setData({ ...data, month: v })} placeholder="may" />
+              </Field>
+              <Field label="entry date">
+                <Input type="date" value={data.entry_date ?? ''} onChange={(v) => setData({ ...data, entry_date: v, next_fees_date: addMonth(v) })} mono />
+              </Field>
+              <Field label="next fees date">
+                <Input type="date" value={data.next_fees_date ?? ''} onChange={(v) => setData({ ...data, next_fees_date: v })} mono />
+              </Field>
+            </div>
+          </FormSection>
+
+          {/* Money */}
+          <FormSection label="03 · money">
+            <div className="grid grid-cols-2 gap-5">
+              <Field label="fees (pkr)">
+                <Input type="number" value={String(data.fees ?? 0)} onChange={(v) => setData({ ...data, fees: +v })} mono />
+              </Field>
+              <Field label="remaining (pkr)">
+                <Input type="number" value={String(data.remaining ?? 0)} onChange={(v) => setData({ ...data, remaining: +v })} mono />
+              </Field>
+              <Field label="registration fee">
+                <Select value={data.reg_fee_status ?? 'Nill'} onChange={(v) => setData({ ...data, reg_fee_status: v as any })} options={['Nill', 'Paid']} />
+              </Field>
+              <Field label="paid through">
+                <Input value={data.paid_through ?? ''} onChange={(v) => setData({ ...data, paid_through: v })} placeholder="meezan bank / cash" />
+              </Field>
+            </div>
+          </FormSection>
+        </div>
+
+        {/* FOOTER */}
+        <div className="sticky bottom-0 bg-ink-0/95 backdrop-blur border-t border-line px-8 py-5 flex items-center justify-between">
+          <p className="mono text-[10px] tracking-widest2 uppercase text-zinc-600">
+            {isEdit ? 'changes sync automatically' : 'will sync to cloud on save'}
+          </p>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="px-5 py-2.5 border border-line hover:border-line-bright transition mono text-[10px] tracking-widest2 uppercase text-zinc-400">
+              cancel
+            </button>
+            <button onClick={save} className="px-6 py-2.5 bg-crimson hover:bg-crimson-glow transition mono text-[10px] tracking-widest2 uppercase font-bold shadow-glow">
+              {isEdit ? 'save changes' : 'create member'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-const inputCls = "w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500"
+function FormSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mono text-[10px] tracking-widest2 uppercase text-zinc-500 mb-4 flex items-center gap-2">
+        <span className="inline-block w-1 h-1 bg-crimson" />
+        {label}
+      </p>
+      {children}
+    </div>
+  )
+}
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
-    <label className="block">
-      <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
-        {label} {required && <span className="text-red-500">*</span>}
+    <label className="block group">
+      <span className="mono text-[10px] tracking-widest2 uppercase text-zinc-500 group-focus-within:text-crimson transition">
+        / {label} {required && <span className="text-crimson">*</span>}
       </span>
-      <div className="mt-1">{children}</div>
+      <div className="mt-1.5">{children}</div>
     </label>
+  )
+}
+
+function Input({ value, onChange, type = 'text', placeholder, mono }: { value: string; onChange: (v: string) => void; type?: string; placeholder?: string; mono?: boolean }) {
+  return (
+    <input
+      type={type}
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value)}
+      className={`w-full bg-ink-1 border border-line focus:border-crimson outline-none px-3 py-2.5 text-white placeholder-zinc-700 transition ${mono ? 'mono text-sm' : 'text-sm'}`}
+    />
+  )
+}
+
+function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full bg-ink-1 border border-line focus:border-crimson outline-none px-3 py-2.5 text-white text-sm transition appearance-none cursor-pointer"
+    >
+      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+    </select>
   )
 }

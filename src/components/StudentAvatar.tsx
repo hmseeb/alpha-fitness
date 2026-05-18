@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { User } from 'lucide-react'
 import { resolvePhoto } from '../lib/photoUrl'
 
 interface Props {
@@ -18,11 +17,22 @@ export function StudentAvatar({ student, size = 40, className = '' }: Props) {
 
   const px = `${size}px`
   if (url) {
-    return <img src={url} alt={student.name} style={{ width: px, height: px }} className={`rounded-full object-cover ring-2 ring-white shadow ${className}`} />
+    return (
+      <img
+        src={url}
+        alt={student.name}
+        style={{ width: px, height: px }}
+        className={`rounded-full object-cover border border-line ${className}`}
+      />
+    )
   }
+  const initial = student.name?.[0]?.toUpperCase() ?? '?'
   return (
-    <div style={{ width: px, height: px }} className={`rounded-full bg-slate-100 flex items-center justify-center text-slate-400 ${className}`}>
-      <User size={Math.round(size * 0.45)} />
+    <div
+      style={{ width: px, height: px, fontSize: Math.round(size * 0.4) }}
+      className={`rounded-full bg-ink-2 border border-line flex items-center justify-center text-zinc-500 font-display tracking-wider ${className}`}
+    >
+      {initial}
     </div>
   )
 }

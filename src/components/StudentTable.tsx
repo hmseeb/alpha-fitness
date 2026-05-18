@@ -1,5 +1,5 @@
 import type { Student } from '../types'
-import { Pencil, Trash2, Wallet, User } from 'lucide-react'
+import { Pencil, Trash2, Wallet, UserPlus } from 'lucide-react'
 import { StudentAvatar } from './StudentAvatar'
 
 interface Props {
@@ -13,10 +13,16 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
   const today = new Date().toISOString().slice(0, 10)
   if (students.length === 0) {
     return (
-      <div className="p-16 text-center text-slate-400">
-        <User size={42} className="mx-auto mb-3 opacity-40" />
-        <p className="font-medium">No students yet</p>
-        <p className="text-sm">Click "Add Student" to get started</p>
+      <div className="p-20 text-center">
+        <div className="inline-flex flex-col items-center gap-4 text-zinc-600">
+          <div className="w-14 h-14 border border-line flex items-center justify-center">
+            <UserPlus size={20} />
+          </div>
+          <div>
+            <p className="display text-2xl text-zinc-400 tracking-wider">NO MEMBERS YET</p>
+            <p className="mono text-[10px] tracking-widest2 uppercase mt-2">click "add member" to get started</p>
+          </div>
+        </div>
       </div>
     )
   }
@@ -24,78 +30,81 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider">
-            <th className="px-4 py-3 text-left font-semibold">SR</th>
-            <th className="px-4 py-3 text-left font-semibold">Photo</th>
-            <th className="px-4 py-3 text-left font-semibold">Name</th>
-            <th className="px-4 py-3 text-left font-semibold">Contact</th>
-            <th className="px-4 py-3 text-left font-semibold">Time</th>
-            <th className="px-4 py-3 text-right font-semibold">Fees</th>
-            <th className="px-4 py-3 text-left font-semibold">Next Due</th>
-            <th className="px-4 py-3 text-left font-semibold">Membership</th>
-            <th className="px-4 py-3 text-left font-semibold">Paid Via</th>
-            <th className="px-4 py-3 text-right font-semibold">Remaining</th>
-            <th className="px-4 py-3 text-right font-semibold">Actions</th>
+          <tr className="border-b border-line">
+            <Th>sr</Th>
+            <Th>member</Th>
+            <Th>contact</Th>
+            <Th>time</Th>
+            <Th align="right">fees</Th>
+            <Th>next due</Th>
+            <Th>tier</Th>
+            <Th>paid via</Th>
+            <Th align="right">remaining</Th>
+            <Th align="right"> </Th>
           </tr>
         </thead>
         <tbody>
-          {students.map((s) => {
+          {students.map((s, i) => {
             const overdue = s.next_fees_date && s.next_fees_date < today
             return (
               <tr
                 key={s.id}
-                className={`border-t border-slate-100 hover:bg-slate-50/60 transition ${overdue ? 'bg-red-50/40' : ''}`}
+                className={`group border-b border-line/60 last:border-0 hover:bg-ink-2/60 transition relative ${overdue ? 'bg-crimson/[0.04]' : ''}`}
               >
-                <td className="px-4 py-3 font-mono text-slate-500">{s.sr_no}</td>
-                <td className="px-4 py-3">
-                  <StudentAvatar student={s} size={40} />
+                {overdue && <td className="absolute left-0 top-0 bottom-0 w-[2px] bg-crimson p-0" />}
+                <td className="px-6 py-4 mono text-xs text-zinc-500 tabular">
+                  {String(s.sr_no).padStart(3, '0')}
                 </td>
-                <td className="px-4 py-3 font-semibold text-slate-800">{s.name}</td>
-                <td className="px-4 py-3 text-slate-600">{s.contact}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded-md text-xs font-medium ${s.time_table === 'Morning' ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800'}`}>
-                    {s.time_table}
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className={overdue ? 'ring-2 ring-crimson rounded-full' : ''}>
+                      <StudentAvatar student={s} size={36} />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white uppercase tracking-wide text-[13px]">{s.name}</p>
+                      <p className="mono text-[10px] tracking-wider text-zinc-600 uppercase">
+                        member · {String(i + 1).padStart(3, '0')}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 mono text-xs text-zinc-400">{s.contact || '—'}</td>
+                <td className="px-6 py-4">
+                  <span className={`mono text-[10px] uppercase tracking-widest2 px-2 py-1 ${
+                    s.time_table === 'Morning'
+                      ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+                      : 'bg-blue-500/10 text-blue-300 border border-blue-500/20'
+                  }`}>
+                    {s.time_table === 'Morning' ? '◐ am' : '◑ pm'}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-right font-medium">{s.fees.toLocaleString()}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-sm ${overdue ? 'text-red-600 font-bold' : 'text-slate-600'}`}>
+                <td className="px-6 py-4 text-right mono tabular text-zinc-300">
+                  {s.fees.toLocaleString()}
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`mono text-xs tabular ${overdue ? 'text-crimson font-bold' : 'text-zinc-500'}`}>
                     {s.next_fees_date || '—'}
-                    {overdue && ' ⚠'}
+                    {overdue && <span className="ml-2 inline-block w-1.5 h-1.5 bg-crimson rec-dot rounded-full align-middle" />}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{s.membership}</td>
-                <td className="px-4 py-3 text-slate-600">{s.paid_through || '—'}</td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-6 py-4">
+                  <span className="mono text-[10px] uppercase tracking-widest2 text-zinc-400">
+                    {s.membership}
+                  </span>
+                </td>
+                <td className="px-6 py-4 mono text-xs text-zinc-500">{s.paid_through || '—'}</td>
+                <td className="px-6 py-4 text-right">
                   {s.remaining > 0 ? (
-                    <span className="text-red-600 font-semibold">{s.remaining.toLocaleString()}</span>
+                    <span className="mono tabular text-crimson font-bold">{s.remaining.toLocaleString()}</span>
                   ) : (
-                    <span className="text-slate-400">0</span>
+                    <span className="mono tabular text-zinc-700">0</span>
                   )}
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1">
-                    <button
-                      onClick={() => onOpenPayments(s)}
-                      className="p-2 rounded-lg hover:bg-emerald-100 text-emerald-700"
-                      title="Payments"
-                    >
-                      <Wallet size={16} />
-                    </button>
-                    <button
-                      onClick={() => onEdit(s)}
-                      className="p-2 rounded-lg hover:bg-blue-100 text-blue-700"
-                      title="Edit"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => onDelete(s)}
-                      className="p-2 rounded-lg hover:bg-red-100 text-red-700"
-                      title="Delete"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                <td className="px-6 py-4">
+                  <div className="flex items-center justify-end gap-1 opacity-30 group-hover:opacity-100 transition">
+                    <IconBtn onClick={() => onOpenPayments(s)} color="emerald" title="payments"><Wallet size={14} /></IconBtn>
+                    <IconBtn onClick={() => onEdit(s)} color="blue" title="edit"><Pencil size={14} /></IconBtn>
+                    <IconBtn onClick={() => onDelete(s)} color="crimson" title="delete"><Trash2 size={14} /></IconBtn>
                   </div>
                 </td>
               </tr>
@@ -104,5 +113,26 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
         </tbody>
       </table>
     </div>
+  )
+}
+
+function Th({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
+  return (
+    <th className={`px-6 py-3 mono text-[10px] tracking-widest2 uppercase text-zinc-500 font-medium ${align === 'right' ? 'text-right' : 'text-left'}`}>
+      {children}
+    </th>
+  )
+}
+
+function IconBtn({ children, onClick, color, title }: { children: React.ReactNode; onClick: () => void; color: string; title: string }) {
+  const cls = {
+    emerald: 'hover:bg-emerald-500/10 hover:text-emerald-400',
+    blue: 'hover:bg-blue-500/10 hover:text-blue-400',
+    crimson: 'hover:bg-crimson/10 hover:text-crimson',
+  }[color]
+  return (
+    <button onClick={onClick} title={title} className={`p-2 text-zinc-500 transition ${cls}`}>
+      {children}
+    </button>
   )
 }

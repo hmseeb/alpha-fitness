@@ -6,7 +6,7 @@ import { StudentDialog } from './components/StudentDialog'
 import { PaymentDrawer } from './components/PaymentDrawer'
 import { Login } from './components/Login'
 import { SyncBadge } from './components/SyncBadge'
-import { Dumbbell, Plus, Download, Search } from 'lucide-react'
+import { Plus, Download, Search } from 'lucide-react'
 import { exportToExcel } from './lib/export'
 
 export default function App() {
@@ -42,11 +42,16 @@ export default function App() {
   }, [user?.id, refresh])
 
   if (user === undefined) {
-    return <div className="min-h-screen flex items-center justify-center text-slate-400">Loading…</div>
+    return (
+      <div className="min-h-screen bg-ink-0 flex items-center justify-center">
+        <div className="mono text-xs uppercase tracking-widest2 text-zinc-600 flex items-center gap-3">
+          <span className="w-1.5 h-1.5 bg-crimson rec-dot rounded-full" />
+          loading
+        </div>
+      </div>
+    )
   }
-  if (!user) {
-    return <Login onSignedIn={(u) => setUser(u)} />
-  }
+  if (!user) return <Login onSignedIn={(u) => setUser(u)} />
 
   const onExport = async () => {
     const all = await window.api.students.list()
@@ -54,7 +59,7 @@ export default function App() {
     if (!filePath) return
     const buf = exportToExcel(all)
     await window.api.files.writeBuffer(filePath, buf)
-    alert('Exported ✓')
+    alert('exported ✓')
   }
 
   const onSignOut = async () => {
@@ -63,52 +68,78 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-gradient-to-r from-red-700 to-red-600 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/15 p-2 rounded-xl backdrop-blur"><Dumbbell size={26} /></div>
+    <div className="grain min-h-screen bg-ink-0 text-white">
+      {/* HEADER — brutalist branding bar */}
+      <header className="relative border-b border-line">
+        <div className="absolute inset-0 stripes pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-crimson/40 to-transparent" />
+
+        <div className="relative max-w-[1600px] mx-auto px-8 py-6 flex items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="flex items-center gap-3 pr-5 border-r border-line">
+              <div className="w-2 h-2 bg-crimson rec-dot rounded-full" />
+              <span className="mono text-[10px] tracking-widest2 uppercase text-zinc-500">live</span>
+            </div>
             <div>
-              <h1 className="text-2xl font-extrabold tracking-tight">ALPHA FITNESS JAMPUR</h1>
-              <p className="text-red-100 text-xs uppercase tracking-widest">Member Management</p>
+              <h1 className="display text-3xl leading-none tracking-tight">
+                ALPHA FITNESS <span className="text-crimson">/</span> JAMPUR
+              </h1>
+              <p className="mono text-[10px] tracking-widest2 uppercase text-zinc-600 mt-1">
+                member operations console · v0.2
+              </p>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
             <SyncBadge onSignOut={onSignOut} />
-            <button onClick={onExport} className="bg-white/15 hover:bg-white/25 transition px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 backdrop-blur">
-              <Download size={16} /> Export
+            <button
+              onClick={onExport}
+              className="group flex items-center gap-2 px-4 py-2.5 border border-line hover:border-line-bright hover:bg-ink-2 transition mono text-[10px] tracking-widest2 uppercase"
+            >
+              <Download size={13} />
+              <span>export</span>
             </button>
-            <button onClick={() => setEditing('new')} className="bg-white text-red-700 hover:bg-red-50 transition px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow">
-              <Plus size={16} /> Add Student
+            <button
+              onClick={() => setEditing('new')}
+              className="group flex items-center gap-2 px-5 py-2.5 bg-crimson hover:bg-crimson-glow transition mono text-[10px] tracking-widest2 uppercase font-bold shadow-glow"
+            >
+              <Plus size={14} />
+              <span>add member</span>
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      <main className="max-w-[1600px] mx-auto px-8 py-8 space-y-8">
         <Dashboard stats={stats} />
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="font-bold text-slate-800">Students</h2>
+        <section className="rise rise-4">
+          <div className="flex items-end justify-between mb-4">
+            <div>
+              <p className="mono text-[10px] tracking-widest2 uppercase text-zinc-500">/ 02</p>
+              <h2 className="display text-4xl tracking-tight leading-none mt-1">THE ROSTER</h2>
+            </div>
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
               <input
-                placeholder="Search by name or contact..."
+                placeholder="search name or contact..."
                 value={q} onChange={(e) => setQ(e.target.value)}
-                className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm w-72 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500"
+                className="pl-9 pr-4 py-2.5 bg-ink-1 border border-line focus:border-crimson outline-none text-sm w-80 placeholder-zinc-700 mono"
               />
             </div>
           </div>
-          <StudentTable
-            students={students}
-            onEdit={(s) => setEditing(s)}
-            onOpenPayments={(s) => setDrawerStudent(s)}
-            onDelete={async (s) => {
-              if (confirm(`Delete ${s.name}?`)) { await window.api.students.remove(s.id); refresh() }
-            }}
-          />
-        </div>
+
+          <div className="bg-ink-1 border border-line">
+            <StudentTable
+              students={students}
+              onEdit={(s) => setEditing(s)}
+              onOpenPayments={(s) => setDrawerStudent(s)}
+              onDelete={async (s) => {
+                if (confirm(`delete ${s.name}?`)) { await window.api.students.remove(s.id); refresh() }
+              }}
+            />
+          </div>
+        </section>
       </main>
 
       {editing !== null && (
