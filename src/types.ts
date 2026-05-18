@@ -1,7 +1,9 @@
 export interface Student {
-  id: number
+  id: string
+  owner_id: string
   sr_no: number
   photo_path: string | null
+  photo_remote_path: string | null
   name: string
   contact: string
   time_table: 'Morning' | 'Evening'
@@ -14,44 +16,66 @@ export interface Student {
   paid_through: string
   remaining: number
   created_at?: string
+  updated_at?: string
+  deleted_at?: string | null
 }
 
 export interface Payment {
-  id: number
-  student_id: number
+  id: string
+  student_id: string
   amount: number
   paid_on: string
   method: string
   note: string
 }
 
-export interface DashStats {
-  active: number
-  overdue: number
-  revenue: number
+export interface DashStats { active: number; overdue: number; revenue: number }
+
+export interface AuthUser { id: string; email?: string }
+
+export interface SyncStatus {
+  status: 'offline' | 'idle' | 'syncing' | 'error'
+  pending: number
+  lastSyncedAt: string | null
+  lastError: string | null
 }
 
 declare global {
   interface Window {
     api: {
+      auth: {
+        signIn: (email: string, password: string) => Promise<AuthUser>
+        signUp: (email: string, password: string) => Promise<AuthUser>
+        signOut: () => Promise<boolean>
+        state: () => Promise<AuthUser | null>
+        onStateChange: (cb: (user: AuthUser | null) => void) => () => void
+      }
       students: {
         list: (q?: string) => Promise<Student[]>
-        get: (id: number) => Promise<Student>
+        get: (id: string) => Promise<Student>
         create: (data: Partial<Student>) => Promise<Student>
-        update: (id: number, data: Partial<Student>) => Promise<Student>
-        remove: (id: number) => Promise<boolean>
+        update: (id: string, data: Partial<Student>) => Promise<Student>
+        remove: (id: string) => Promise<boolean>
       }
       payments: {
-        list: (studentId: number) => Promise<Payment[]>
-        create: (data: Partial<Payment>) => Promise<Payment[]>
+        list: (studentId: string) => Promise<Payment[]>
+        create: (data: Partial<Payment> & { student_id: string }) => Promise<Payment[]>
       }
-      photos: { save: (srcPath: string) => Promise<string> }
+      photos: {
+        save: (srcPath: string) => Promise<string>
+        remoteUrl: (remotePath: string) => Promise<string | null>
+      }
       dialog: {
         pickImage: () => Promise<string | null>
         saveExcel: (defaultName: string) => Promise<string | null>
       }
       files: { writeBuffer: (filePath: string, buffer: Uint8Array) => Promise<boolean> }
       dashboard: { stats: () => Promise<DashStats> }
+      sync: {
+        now: () => Promise<{ pending: number; lastSyncedAt: string | null }>
+        status: () => Promise<{ pending: number; lastSyncedAt: string | null }>
+        onStatus: (cb: (s: SyncStatus) => void) => () => void
+      }
     }
   }
 }

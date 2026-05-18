@@ -2,13 +2,20 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { initDb, listStudents, getStudent, createStudent, updateStudent, deleteStudent, savePhoto, listPayments, recordPayment, dashboardStats } from './db.js'
+import 'dotenv/config'
+import {
+  initDb, listStudents, getStudent, createStudent, updateStudent, deleteStudent,
+  savePhoto, listPayments, recordPayment, dashboardStats,
+} from './db.js'
+import { initSupabase, restoreSession, signIn, signUp, signOut } from './supabase.js'
+import { startSync, stopSync, statusSnapshot, getSignedPhotoUrl } from './sync.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
 const isDev = !!process.env.VITE_DEV_SERVER_URL
 
 let win: BrowserWindow | null = null
+let currentOwnerId: string | null = null
+let triggerSync: (() => Promise<void>) | null = null
 
 function createWindow() {
   win = new BrowserWindow({
@@ -25,40 +32,107 @@ function createWindow() {
       nodeIntegration: false,
     },
   })
-
-  if (isDev) {
-    win.loadURL(process.env.VITE_DEV_SERVER_URL!)
-  } else {
-    win.loadFile(path.join(__dirname, '../dist/index.html'))
-  }
+  if (isDev) win.loadURL(process.env.VITE_DEV_SERVER_URL!)
+  else win.loadFile(path.join(__dirname, '../dist/index.html'))
 }
 
-app.whenReady().then(() => {
+function requireOwner(): string {
+  if (!currentOwnerId) throw new Error('Not authenticated')
+  return currentOwnerId
+}
+
+app.whenReady().then(async () => {
   initDb()
+  initSupabase()
   createWindow()
+
+  const session = await restoreSession().catch(() => null)
+  if (session?.user) {
+    currentOwnerId = session.user.id
+    triggerSync = startSync(win, () => currentOwnerId)
+  }
+
+  win?.webContents.once('did-finish-load', () => {
+    win?.webContents.send('auth:state', session?.user ? { id: session.user.id, email: session.user.email } : null)
+  })
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
 app.on('window-all-closed', () => {
+  stopSync()
   if (process.platform !== 'darwin') app.quit()
 })
 
-ipcMain.handle('students:list', (_e, q?: string) => listStudents(q))
-ipcMain.handle('students:get', (_e, id: number) => getStudent(id))
-ipcMain.handle('students:create', (_e, data) => createStudent(data))
-ipcMain.handle('students:update', (_e, id, data) => updateStudent(id, data))
-ipcMain.handle('students:delete', (_e, id) => deleteStudent(id))
-ipcMain.handle('photos:save', (_e, srcPath: string) => savePhoto(srcPath))
-ipcMain.handle('payments:list', (_e, studentId: number) => listPayments(studentId))
-ipcMain.handle('payments:create', (_e, data) => recordPayment(data))
-ipcMain.handle('dashboard:stats', () => dashboardStats())
+// Auth
+ipcMain.handle('auth:signIn', async (_e, email: string, password: string) => {
+  const data = await signIn(email, password)
+  currentOwnerId = data.user?.id ?? null
+  if (currentOwnerId) triggerSync = startSync(win, () => currentOwnerId)
+  return { id: data.user?.id, email: data.user?.email }
+})
 
+ipcMain.handle('auth:signUp', async (_e, email: string, password: string) => {
+  const data = await signUp(email, password)
+  currentOwnerId = data.user?.id ?? null
+  if (currentOwnerId) triggerSync = startSync(win, () => currentOwnerId)
+  return { id: data.user?.id, email: data.user?.email }
+})
+
+ipcMain.handle('auth:signOut', async () => {
+  await signOut()
+  currentOwnerId = null
+  stopSync()
+  return true
+})
+
+ipcMain.handle('auth:state', async () => {
+  if (!currentOwnerId) return null
+  return { id: currentOwnerId }
+})
+
+// Students
+ipcMain.handle('students:list', (_e, q?: string) => listStudents(requireOwner(), q))
+ipcMain.handle('students:get', (_e, id: string) => getStudent(id))
+ipcMain.handle('students:create', async (_e, data) => {
+  const s = createStudent(requireOwner(), data)
+  triggerSync?.()
+  return s
+})
+ipcMain.handle('students:update', async (_e, id, data) => {
+  const s = updateStudent(requireOwner(), id, data)
+  triggerSync?.()
+  return s
+})
+ipcMain.handle('students:delete', async (_e, id) => {
+  deleteStudent(requireOwner(), id)
+  triggerSync?.()
+  return true
+})
+
+// Photos
+ipcMain.handle('photos:save', (_e, srcPath: string) => savePhoto(srcPath))
+ipcMain.handle('photos:remoteUrl', (_e, remotePath: string) => getSignedPhotoUrl(remotePath))
+
+// Payments
+ipcMain.handle('payments:list', (_e, studentId: string) => listPayments(requireOwner(), studentId))
+ipcMain.handle('payments:create', async (_e, data) => {
+  const r = recordPayment(requireOwner(), data)
+  triggerSync?.()
+  return r
+})
+
+// Dashboard + sync
+ipcMain.handle('dashboard:stats', () => dashboardStats(requireOwner()))
+ipcMain.handle('sync:now', async () => { await triggerSync?.(); return statusSnapshot() })
+ipcMain.handle('sync:status', () => statusSnapshot())
+
+// Dialogs
 ipcMain.handle('dialog:pickImage', async () => {
   const res = await dialog.showOpenDialog({
-    title: 'Pick a photo',
-    properties: ['openFile'],
+    title: 'Pick a photo', properties: ['openFile'],
     filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp'] }],
   })
   if (res.canceled || !res.filePaths[0]) return null
@@ -67,8 +141,7 @@ ipcMain.handle('dialog:pickImage', async () => {
 
 ipcMain.handle('dialog:saveExcel', async (_e, defaultName: string) => {
   const res = await dialog.showSaveDialog({
-    title: 'Export students',
-    defaultPath: defaultName,
+    title: 'Export students', defaultPath: defaultName,
     filters: [{ name: 'Excel', extensions: ['xlsx'] }],
   })
   if (res.canceled || !res.filePath) return null

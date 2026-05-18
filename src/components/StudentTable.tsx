@@ -1,5 +1,6 @@
 import type { Student } from '../types'
 import { Pencil, Trash2, Wallet, User } from 'lucide-react'
+import { StudentAvatar } from './StudentAvatar'
 
 interface Props {
   students: Student[]
@@ -47,13 +48,7 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
               >
                 <td className="px-4 py-3 font-mono text-slate-500">{s.sr_no}</td>
                 <td className="px-4 py-3">
-                  {s.photo_path ? (
-                    <img src={`file://${s.photo_path}`} alt={s.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                      <User size={18} />
-                    </div>
-                  )}
+                  <StudentAvatar student={s} size={40} />
                 </td>
                 <td className="px-4 py-3 font-semibold text-slate-800">{s.name}</td>
                 <td className="px-4 py-3 text-slate-600">{s.contact}</td>

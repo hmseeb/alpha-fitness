@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Student } from '../types'
-import { X, Upload, User } from 'lucide-react'
+import { X, Upload } from 'lucide-react'
+import { StudentAvatar } from './StudentAvatar'
 
 const empty: Partial<Student> = {
   name: '',
@@ -57,15 +58,9 @@ export function StudentDialog({ student, onClose, onSaved }: { student: Student 
 
         <div className="p-6 space-y-5">
           <div className="flex items-center gap-4">
-            {data.photo_path ? (
-              <img src={`file://${data.photo_path}`} className="w-24 h-24 rounded-2xl object-cover ring-2 ring-slate-100" />
-            ) : (
-              <div className="w-24 h-24 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
-                <User size={36} />
-              </div>
-            )}
+            <StudentAvatar student={{ photo_path: data.photo_path, photo_remote_path: data.photo_remote_path, name: data.name || '' }} size={96} className="!rounded-2xl" />
             <button onClick={pickPhoto} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">
-              <Upload size={16} /> {data.photo_path ? 'Change photo' : 'Upload photo'}
+              <Upload size={16} /> {data.photo_path || data.photo_remote_path ? 'Change photo' : 'Upload photo'}
             </button>
           </div>
 
