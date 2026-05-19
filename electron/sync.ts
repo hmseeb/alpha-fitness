@@ -6,6 +6,7 @@ import {
   getDb, outboxBatch, outboxDelete, outboxRetry, outboxCount,
   getSyncState, setSyncState,
   upsertRemoteStudent, upsertRemotePayment,
+  upsertRemoteStaff, upsertRemoteStaffPayment,
 } from './db.js'
 
 let timer: NodeJS.Timeout | null = null
@@ -34,6 +35,8 @@ export function startSync(win: BrowserWindow | null, getOwnerId: () => string | 
       await pushOutbox(ownerId)
       await pullStudents(ownerId)
       await pullPayments(ownerId)
+      await pullStaff(ownerId)
+      await pullStaffPayments(ownerId)
       setSyncState('last_synced_at', new Date().toISOString())
       lastError = null
       broadcast(win, 'idle', outboxCount(), getSyncState('last_synced_at'))
@@ -113,6 +116,43 @@ async function pushOutbox(ownerId: string) {
             .eq('id', payload.id)
           if (error) throw error
         }
+      } else if (item.entity === 'staff') {
+        if (item.op === 'upsert') {
+          const photoRemote = await uploadPhotoIfNeeded(ownerId, payload)
+          const remote = {
+            id: payload.id, owner_id: ownerId,
+            name: payload.name, role: payload.role, contact: payload.contact,
+            cnic: payload.cnic, address: payload.address,
+            monthly_salary: payload.monthly_salary,
+            joined_date: payload.joined_date,
+            notes: payload.notes,
+            photo_path: photoRemote,
+            updated_at: payload.updated_at, deleted_at: payload.deleted_at,
+          }
+          const { error } = await sb.from('staff').upsert(remote)
+          if (error) throw error
+        } else if (item.op === 'delete') {
+          const { error } = await sb.from('staff')
+            .update({ deleted_at: payload.deleted_at, updated_at: payload.updated_at })
+            .eq('id', payload.id)
+          if (error) throw error
+        }
+      } else if (item.entity === 'staff_payments') {
+        if (item.op === 'upsert') {
+          const remote = {
+            id: payload.id, owner_id: ownerId, staff_id: payload.staff_id,
+            amount: payload.amount, paid_on: payload.paid_on,
+            kind: payload.kind, method: payload.method, note: payload.note,
+            updated_at: payload.updated_at, deleted_at: payload.deleted_at,
+          }
+          const { error } = await sb.from('staff_payments').upsert(remote)
+          if (error) throw error
+        } else if (item.op === 'delete') {
+          const { error } = await sb.from('staff_payments')
+            .update({ deleted_at: payload.deleted_at, updated_at: payload.updated_at })
+            .eq('id', payload.id)
+          if (error) throw error
+        }
       }
       outboxDelete(item.id)
     } catch (err: any) {
@@ -152,6 +192,38 @@ async function pullPayments(ownerId: string) {
   if (data && data.length) {
     for (const row of data) upsertRemotePayment(ownerId, row)
     setSyncState('payments_pulled_at', data[data.length - 1].updated_at)
+  }
+}
+
+async function pullStaff(ownerId: string) {
+  const sb = getSupabase()
+  const since = getSyncState('staff_pulled_at') ?? '1970-01-01T00:00:00Z'
+  const { data, error } = await sb.from('staff')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .gt('updated_at', since)
+    .order('updated_at', { ascending: true })
+    .limit(500)
+  if (error) throw error
+  if (data && data.length) {
+    for (const row of data) upsertRemoteStaff(ownerId, row)
+    setSyncState('staff_pulled_at', data[data.length - 1].updated_at)
+  }
+}
+
+async function pullStaffPayments(ownerId: string) {
+  const sb = getSupabase()
+  const since = getSyncState('staff_payments_pulled_at') ?? '1970-01-01T00:00:00Z'
+  const { data, error } = await sb.from('staff_payments')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .gt('updated_at', since)
+    .order('updated_at', { ascending: true })
+    .limit(500)
+  if (error) throw error
+  if (data && data.length) {
+    for (const row of data) upsertRemoteStaffPayment(ownerId, row)
+    setSyncState('staff_payments_pulled_at', data[data.length - 1].updated_at)
   }
 }
 

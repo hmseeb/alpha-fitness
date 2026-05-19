@@ -23,6 +23,17 @@ const api = {
     list: (studentId: string) => ipcRenderer.invoke('payments:list', studentId),
     create: (data: any) => ipcRenderer.invoke('payments:create', data),
   },
+  staff: {
+    list: (q?: string) => ipcRenderer.invoke('staff:list', q),
+    get: (id: string) => ipcRenderer.invoke('staff:get', id),
+    create: (data: any) => ipcRenderer.invoke('staff:create', data),
+    update: (id: string, data: any) => ipcRenderer.invoke('staff:update', id, data),
+    remove: (id: string) => ipcRenderer.invoke('staff:delete', id),
+  },
+  staffPayments: {
+    list: (staffId: string) => ipcRenderer.invoke('staff_payments:list', staffId),
+    create: (data: any) => ipcRenderer.invoke('staff_payments:create', data),
+  },
   photos: {
     save: (srcPath: string) => ipcRenderer.invoke('photos:save', srcPath),
     remoteUrl: (remotePath: string) => ipcRenderer.invoke('photos:remoteUrl', remotePath),

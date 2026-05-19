@@ -106,9 +106,6 @@ export function StudentDialog({ student, onClose, onSaved }: { student: Student 
               <Field label="Contact number">
                 <TextInput value={data.contact ?? ''} onChange={(v) => setData({ ...data, contact: v })} placeholder="0333-8325556" />
               </Field>
-              <Field label="SR № (auto)">
-                <TextInput type="number" value={String(data.sr_no ?? '')} onChange={(v) => setData({ ...data, sr_no: +v })} placeholder="999" />
-              </Field>
               <Field label="Tier">
                 <SelectInput value={data.membership ?? 'Normal'} onChange={(v) => setData({ ...data, membership: v })} options={['Normal', 'Premium', 'VIP']} />
               </Field>

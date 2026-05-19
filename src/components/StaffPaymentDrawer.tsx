@@ -1,42 +1,35 @@
 import { useEffect, useState } from 'react'
-import type { Student, Payment } from '../types'
+import type { Staff, StaffPayment } from '../types'
 import { X, Plus, CheckCircle2 } from 'lucide-react'
 import { StudentAvatar } from './StudentAvatar'
 
-function absentMonths(student: Student): number {
-  if (!student.next_fees_date) return 0
-  const next = new Date(student.next_fees_date)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  next.setHours(0, 0, 0, 0)
-  if (next >= today) return 0
-  return (today.getFullYear() - next.getFullYear()) * 12 + (today.getMonth() - next.getMonth())
-}
-
-export function PaymentDrawer({ student, onClose }: { student: Student; onClose: () => void }) {
-  const [payments, setPayments] = useState<Payment[]>([])
+export function StaffPaymentDrawer({ staff, onClose }: { staff: Staff; onClose: () => void }) {
+  const [payments, setPayments] = useState<StaffPayment[]>([])
   const [showForm, setShowForm] = useState(false)
-  const absent = absentMonths(student)
   const [form, setForm] = useState({
-    months: 1,
-    amount: student.fees,
+    amount: staff.monthly_salary,
     paid_on: new Date().toISOString().slice(0, 10),
-    method: student.paid_through || 'Cash',
+    kind: 'advance' as 'advance' | 'salary' | 'bonus',
+    method: 'Cash',
     note: '',
   })
 
-  const refresh = async () => setPayments(await window.api.payments.list(student.id))
-  useEffect(() => { refresh() }, [student.id])
+  const refresh = async () => setPayments(await window.api.staffPayments.list(staff.id))
+  useEffect(() => { refresh() }, [staff.id])
 
   const submit = async () => {
     if (!form.amount || !form.paid_on) return
-    await window.api.payments.create({ student_id: student.id, ...form } as any)
+    await window.api.staffPayments.create({ staff_id: staff.id, ...form })
     setShowForm(false)
-    setForm({ ...form, note: '', months: 1, amount: student.fees })
+    setForm({ ...form, note: '' })
     refresh()
   }
 
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0)
+  const monthStart = new Date().toISOString().slice(0, 7) + '-01'
+  const paidThisMonth = payments
+    .filter((p) => p.paid_on >= monthStart)
+    .reduce((s, p) => s + p.amount, 0)
+  const balance = staff.monthly_salary - paidThisMonth
 
   return (
     <div className="fixed inset-0 z-[100] flex">
@@ -45,35 +38,36 @@ export function PaymentDrawer({ student, onClose }: { student: Student; onClose:
         className="slide-in w-full max-w-md flex flex-col border-l border-line"
         style={{ background: '#ffffff', boxShadow: '-30px 0 60px -20px rgba(10,10,10,0.25)' }}
       >
-        {/* HEADER — also draggable strip at top */}
         <div className="app-drag h-7 w-full" />
         <div className="px-6 pt-2 pb-5 border-b border-line">
           <div className="flex items-center justify-between mb-5">
-            <p className="text-xs uppercase tracking-widest text-muted font-semibold">Payments</p>
+            <p className="text-xs uppercase tracking-widest text-muted font-semibold">Salary ledger</p>
             <button onClick={onClose} className="p-2 rounded-xl bg-surface-2 hover:bg-surface-3 text-muted hover:text-ink transition">
               <X size={14} />
             </button>
           </div>
 
           <div className="flex items-center gap-4">
-            <StudentAvatar student={student} size={56} />
+            <StudentAvatar student={staff as any} size={56} />
             <div className="flex-1">
-              <h3 className="display-sm text-xl leading-tight">{student.name}</h3>
+              <h3 className="display-sm text-xl leading-tight">{staff.name}</h3>
               <p className="text-xs text-muted mt-1">
-                {student.contact || 'no contact on file'}
+                {staff.role || 'staff'} · joined {staff.joined_date ?? '—'}
               </p>
             </div>
           </div>
 
-          {/* Summary stats */}
           <div className="mt-5 grid grid-cols-3 gap-3">
-            <SummaryCard label="Total paid" value={`PKR ${totalPaid.toLocaleString()}`} accent="moss" />
-            <SummaryCard label="Next due" value={student.next_fees_date ?? '—'} mono />
-            <SummaryCard label="Entries" value={String(payments.length).padStart(2, '0')} />
+            <SummaryCard label="Salary" value={`PKR ${staff.monthly_salary.toLocaleString()}`} />
+            <SummaryCard label="Paid this month" value={`PKR ${paidThisMonth.toLocaleString()}`} accent="moss" />
+            <SummaryCard
+              label={balance > 0 ? 'Owed' : balance < 0 ? 'Advance' : 'Status'}
+              value={balance === 0 ? 'settled' : `PKR ${Math.abs(balance).toLocaleString()}`}
+              accent={balance > 0 ? 'coral' : balance < 0 ? 'azure' : 'moss'}
+            />
           </div>
         </div>
 
-        {/* BODY */}
         <div className="flex-1 overflow-y-auto p-6 space-y-3">
           {!showForm && (
             <button
@@ -97,50 +91,26 @@ export function PaymentDrawer({ student, onClose }: { student: Student; onClose:
                 <p className="text-xs uppercase tracking-widest text-coral font-semibold">Recording</p>
                 <button onClick={() => setShowForm(false)} className="ml-auto text-xs text-muted hover:text-ink">cancel</button>
               </div>
-
-              {absent > 0 && (
-                <div className="bg-coral/10 border border-coral/30 rounded-2xl p-3">
-                  <p className="text-xs text-coral font-semibold">
-                    {absent} month{absent > 1 ? 's' : ''} will be logged as <span className="underline">absent</span> (PKR 0)
-                  </p>
-                  <p className="text-[11px] text-muted mt-1">
-                    Next due date resets to today + {form.months} month{form.months > 1 ? 's' : ''}.
-                  </p>
-                </div>
-              )}
-
-              <DrawerField label="Pay for how many months?">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const m = Math.max(1, form.months - 1)
-                      setForm({ ...form, months: m, amount: student.fees * m })
-                    }}
-                    className="w-10 h-10 rounded-xl bg-surface border border-line hover:border-ink text-ink font-bold text-lg flex items-center justify-center"
-                  >−</button>
-                  <input
-                    type="number" min={1}
-                    value={form.months}
-                    onChange={(e) => {
-                      const m = Math.max(1, +e.target.value || 1)
-                      setForm({ ...form, months: m, amount: student.fees * m })
-                    }}
-                    className={`${drawerInput} text-center font-semibold`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const m = form.months + 1
-                      setForm({ ...form, months: m, amount: student.fees * m })
-                    }}
-                    className="w-10 h-10 rounded-xl bg-surface border border-line hover:border-ink text-ink font-bold text-lg flex items-center justify-center"
-                  >+</button>
+              <DrawerField label="Type">
+                <div className="grid grid-cols-3 gap-2">
+                  {(['advance', 'salary', 'bonus'] as const).map((k) => (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => setForm({ ...form, kind: k })}
+                      className={`py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition ${
+                        form.kind === k
+                          ? 'bg-ink text-lime'
+                          : 'bg-surface border border-line text-muted hover:border-ink'
+                      }`}
+                    >
+                      {k}
+                    </button>
+                  ))}
                 </div>
               </DrawerField>
-
               <div className="grid grid-cols-2 gap-3">
-                <DrawerField label="Total (PKR)">
+                <DrawerField label="Amount (PKR)">
                   <input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: +e.target.value })} className={drawerInput} />
                 </DrawerField>
                 <DrawerField label="Date">
@@ -148,27 +118,21 @@ export function PaymentDrawer({ student, onClose }: { student: Student; onClose:
                 </DrawerField>
               </div>
               <DrawerField label="Method">
-                <input value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })} placeholder="Cash · Meezan Bank · UBL" className={drawerInput} />
+                <input value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })} placeholder="Cash · Bank transfer" className={drawerInput} />
               </DrawerField>
               <DrawerField label="Note (optional)">
                 <input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className={drawerInput} />
               </DrawerField>
               <button onClick={submit} className="w-full bg-ink text-lime hover:bg-ink-2 transition py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2">
-                <CheckCircle2 size={16} />
-                {absent > 0
-                  ? `Mark ${absent} absent + pay ${form.months} month${form.months > 1 ? 's' : ''}`
-                  : `Confirm · advance ${form.months} month${form.months > 1 ? 's' : ''}`}
+                <CheckCircle2 size={16} /> Confirm
               </button>
             </div>
           )}
 
           {payments.length === 0 && !showForm && (
             <div className="text-center py-16">
-              <div className="w-14 h-14 bg-surface-2 rounded-full flex items-center justify-center mx-auto mb-4">
-                💸
-              </div>
-              <p className="display-sm text-lg">No payments yet</p>
-              <p className="text-sm text-muted mt-1">Record the first one above</p>
+              <p className="display-sm text-lg text-muted">No payments yet</p>
+              <p className="text-sm text-muted mt-1">Record salary, advance, or a bonus above</p>
             </div>
           )}
 
@@ -179,9 +143,13 @@ export function PaymentDrawer({ student, onClose }: { student: Student; onClose:
           )}
 
           {payments.map((p, i) => (
-            <div key={p.id} className="bg-canvas rounded-3xl p-4 flex items-center justify-between hover:bg-surface-2/60 transition group">
+            <div key={p.id} className="bg-canvas rounded-3xl p-4 flex items-center justify-between hover:bg-surface-2/60 transition">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-moss/15 text-moss rounded-2xl flex items-center justify-center">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
+                  p.kind === 'bonus' ? 'bg-plum/15 text-plum' :
+                  p.kind === 'salary' ? 'bg-moss/15 text-moss' :
+                  'bg-azure/15 text-azure'
+                }`}>
                   <CheckCircle2 size={16} />
                 </div>
                 <div>
@@ -189,7 +157,7 @@ export function PaymentDrawer({ student, onClose }: { student: Student; onClose:
                     PKR <span className="tabular">{p.amount.toLocaleString()}</span>
                   </p>
                   <p className="text-xs text-muted">
-                    {new Date(p.paid_on).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · {p.method || '—'}
+                    {new Date(p.paid_on).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · {p.method || '—'} · <span className="capitalize">{p.kind}</span>
                   </p>
                   {p.note && <p className="text-xs text-soft italic mt-1">"{p.note}"</p>}
                 </div>
@@ -205,12 +173,12 @@ export function PaymentDrawer({ student, onClose }: { student: Student; onClose:
   )
 }
 
-function SummaryCard({ label, value, accent, mono }: { label: string; value: string; accent?: string; mono?: boolean }) {
-  const tint = accent === 'moss' ? 'text-moss' : 'text-ink'
+function SummaryCard({ label, value, accent }: { label: string; value: string; accent?: 'moss' | 'coral' | 'azure' }) {
+  const tint = accent === 'moss' ? 'text-moss' : accent === 'coral' ? 'text-coral' : accent === 'azure' ? 'text-azure' : 'text-ink'
   return (
     <div className="bg-canvas rounded-2xl p-3">
       <p className="text-[10px] uppercase tracking-wider text-muted font-semibold">{label}</p>
-      <p className={`${mono ? 'mono text-xs' : 'font-bold text-sm'} ${tint} mt-1 tabular`}>{value}</p>
+      <p className={`font-bold text-sm ${tint} mt-1 tabular`}>{value}</p>
     </div>
   )
 }

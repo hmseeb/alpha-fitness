@@ -8,6 +8,8 @@ app.setName('Alpha Fitness')
 import {
   initDb, listStudents, getStudent, createStudent, updateStudent, deleteStudent,
   savePhoto, listPayments, recordPayment, dashboardStats,
+  listStaff, getStaff, createStaff, updateStaff, deleteStaff,
+  listStaffPayments, recordStaffPayment,
 } from './db.js'
 import { initSupabase, restoreSession, signIn, signUp, signOut } from './supabase.js'
 import { startSync, stopSync, statusSnapshot, getSignedPhotoUrl } from './sync.js'
@@ -138,6 +140,23 @@ ipcMain.handle('payments:create', async (_e, data) => {
   const r = recordPayment(requireOwner(), data)
   triggerSync?.()
   return r
+})
+
+// Staff
+ipcMain.handle('staff:list', (_e, q?: string) => listStaff(requireOwner(), q))
+ipcMain.handle('staff:get', (_e, id: string) => getStaff(id))
+ipcMain.handle('staff:create', async (_e, data) => {
+  const s = createStaff(requireOwner(), data); triggerSync?.(); return s
+})
+ipcMain.handle('staff:update', async (_e, id, data) => {
+  const s = updateStaff(requireOwner(), id, data); triggerSync?.(); return s
+})
+ipcMain.handle('staff:delete', async (_e, id) => {
+  deleteStaff(requireOwner(), id); triggerSync?.(); return true
+})
+ipcMain.handle('staff_payments:list', (_e, staffId: string) => listStaffPayments(requireOwner(), staffId))
+ipcMain.handle('staff_payments:create', async (_e, data) => {
+  const r = recordStaffPayment(requireOwner(), data); triggerSync?.(); return r
 })
 
 // Dashboard + sync

@@ -29,7 +29,35 @@ export interface Payment {
   note: string
 }
 
-export interface DashStats { active: number; overdue: number; revenue: number }
+export interface DashStats { active: number; overdue: number; revenue: number; staffPaid: number }
+
+export interface Staff {
+  id: string
+  owner_id: string
+  name: string
+  role: string
+  photo_path: string | null
+  photo_remote_path: string | null
+  contact: string
+  cnic: string
+  address: string
+  monthly_salary: number
+  joined_date: string | null
+  notes: string
+  created_at?: string
+  updated_at?: string
+  deleted_at?: string | null
+}
+
+export interface StaffPayment {
+  id: string
+  staff_id: string
+  amount: number
+  paid_on: string
+  kind: 'advance' | 'salary' | 'bonus'
+  method: string
+  note: string
+}
 
 export interface AuthUser { id: string; email?: string }
 
@@ -60,6 +88,17 @@ declare global {
       payments: {
         list: (studentId: string) => Promise<Payment[]>
         create: (data: Partial<Payment> & { student_id: string }) => Promise<Payment[]>
+      }
+      staff: {
+        list: (q?: string) => Promise<Staff[]>
+        get: (id: string) => Promise<Staff>
+        create: (data: Partial<Staff>) => Promise<Staff>
+        update: (id: string, data: Partial<Staff>) => Promise<Staff>
+        remove: (id: string) => Promise<boolean>
+      }
+      staffPayments: {
+        list: (staffId: string) => Promise<StaffPayment[]>
+        create: (data: Partial<StaffPayment> & { staff_id: string }) => Promise<StaffPayment[]>
       }
       photos: {
         save: (srcPath: string) => Promise<string>

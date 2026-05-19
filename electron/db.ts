@@ -57,6 +57,41 @@ export function initDb() {
     CREATE INDEX IF NOT EXISTS payments_student ON payments(student_id);
     CREATE INDEX IF NOT EXISTS payments_owner_updated ON payments(owner_id, updated_at);
 
+    CREATE TABLE IF NOT EXISTS staff (
+      id TEXT PRIMARY KEY,
+      owner_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      role TEXT DEFAULT '',
+      photo_path TEXT,
+      photo_remote_path TEXT,
+      contact TEXT DEFAULT '',
+      cnic TEXT DEFAULT '',
+      address TEXT DEFAULT '',
+      monthly_salary INTEGER DEFAULT 0,
+      joined_date TEXT,
+      notes TEXT DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      deleted_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS staff_owner_updated ON staff(owner_id, updated_at);
+
+    CREATE TABLE IF NOT EXISTS staff_payments (
+      id TEXT PRIMARY KEY,
+      owner_id TEXT NOT NULL,
+      staff_id TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      paid_on TEXT NOT NULL,
+      kind TEXT DEFAULT 'advance',
+      method TEXT DEFAULT '',
+      note TEXT DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      deleted_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS staff_payments_staff ON staff_payments(staff_id);
+    CREATE INDEX IF NOT EXISTS staff_payments_owner_updated ON staff_payments(owner_id, updated_at);
+
     CREATE TABLE IF NOT EXISTS outbox (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       entity TEXT NOT NULL,
@@ -77,7 +112,7 @@ export function initDb() {
 
 function now() { return new Date().toISOString() }
 
-function enqueue(entity: 'students' | 'payments', op: 'upsert' | 'delete', row: any) {
+function enqueue(entity: 'students' | 'payments' | 'staff' | 'staff_payments', op: 'upsert' | 'delete', row: any) {
   db.prepare(`INSERT INTO outbox (entity, entity_id, op, payload) VALUES (?, ?, ?, ?)`)
     .run(entity, row.id, op, JSON.stringify(row))
 }
@@ -169,34 +204,74 @@ export function listPayments(ownerId: string, studentId: string) {
   return db.prepare(`SELECT * FROM payments WHERE student_id = ? AND owner_id = ? AND deleted_at IS NULL ORDER BY paid_on DESC`).all(studentId, ownerId)
 }
 
+function todayIso() { return new Date().toISOString().slice(0, 10) }
+
+function monthsBetween(fromIso: string, toIso: string): number {
+  const from = new Date(fromIso)
+  const to = new Date(toIso)
+  return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth())
+}
+
 export function recordPayment(ownerId: string, d: any) {
-  const id = d.id ?? uuidv4()
   const ts = now()
-  const row = {
-    id, owner_id: ownerId,
-    student_id: d.student_id,
-    amount: d.amount,
-    paid_on: d.paid_on,
-    method: d.method ?? '',
-    note: d.note ?? '',
-    created_at: ts, updated_at: ts, deleted_at: null,
-  }
+  const months = Math.max(1, parseInt(d.months ?? 1, 10))
+  const s: any = getStudent(d.student_id)
+  if (!s) throw new Error('Student not found')
+
+  const today = todayIso()
+  const wasOverdue = !!s.next_fees_date && s.next_fees_date < today
+  const absentCount = wasOverdue ? Math.max(0, monthsBetween(s.next_fees_date, today)) : 0
+
   const tx = db.transaction(() => {
+    // 1. Log absent months as PKR 0 entries
+    if (wasOverdue && absentCount > 0) {
+      for (let i = 0; i < absentCount; i++) {
+        const dt = new Date(s.next_fees_date)
+        dt.setMonth(dt.getMonth() + i)
+        const absentRow = {
+          id: uuidv4(), owner_id: ownerId,
+          student_id: d.student_id,
+          amount: 0,
+          paid_on: dt.toISOString().slice(0, 10),
+          method: '',
+          note: 'absent',
+          created_at: ts, updated_at: ts, deleted_at: null,
+        }
+        db.prepare(`
+          INSERT INTO payments (id, owner_id, student_id, amount, paid_on, method, note, created_at, updated_at, deleted_at)
+          VALUES (@id, @owner_id, @student_id, @amount, @paid_on, @method, @note, @created_at, @updated_at, @deleted_at)
+        `).run(absentRow)
+        enqueue('payments', 'upsert', absentRow)
+      }
+    }
+
+    // 2. Insert the actual payment
+    const row = {
+      id: d.id ?? uuidv4(),
+      owner_id: ownerId,
+      student_id: d.student_id,
+      amount: d.amount,
+      paid_on: d.paid_on,
+      method: d.method ?? '',
+      note: d.note ?? (months > 1 ? `${months} months` : ''),
+      created_at: ts, updated_at: ts, deleted_at: null,
+    }
     db.prepare(`
       INSERT INTO payments (id, owner_id, student_id, amount, paid_on, method, note, created_at, updated_at, deleted_at)
       VALUES (@id, @owner_id, @student_id, @amount, @paid_on, @method, @note, @created_at, @updated_at, @deleted_at)
     `).run(row)
     enqueue('payments', 'upsert', row)
 
-    const s: any = getStudent(d.student_id)
-    if (s?.next_fees_date) {
-      const dt = new Date(s.next_fees_date)
-      dt.setMonth(dt.getMonth() + 1)
-      const newNext = dt.toISOString().slice(0, 10)
-      const upd = { ...s, next_fees_date: newNext, paid_through: d.method || s.paid_through, updated_at: ts }
-      db.prepare(`UPDATE students SET next_fees_date = ?, paid_through = ?, updated_at = ? WHERE id = ?`).run(newNext, upd.paid_through, ts, d.student_id)
-      enqueue('students', 'upsert', upd)
-    }
+    // 3. Advance next_fees_date.
+    //    If returning from absence: reset clock to today + N months.
+    //    If current: advance current next_fees_date by N months.
+    const base = wasOverdue ? new Date(today) : new Date(s.next_fees_date ?? today)
+    base.setMonth(base.getMonth() + months)
+    const newNext = base.toISOString().slice(0, 10)
+
+    const upd = { ...s, next_fees_date: newNext, paid_through: d.method || s.paid_through, updated_at: ts }
+    db.prepare(`UPDATE students SET next_fees_date = ?, paid_through = ?, updated_at = ? WHERE id = ?`).run(newNext, upd.paid_through, ts, d.student_id)
+    enqueue('students', 'upsert', upd)
   })
   tx()
   return listPayments(ownerId, d.student_id)
@@ -208,7 +283,138 @@ export function dashboardStats(ownerId: string) {
   const overdue = (db.prepare(`SELECT COUNT(*) AS c FROM students WHERE owner_id = ? AND deleted_at IS NULL AND next_fees_date IS NOT NULL AND next_fees_date < ?`).get(ownerId, today) as any).c
   const monthStart = today.slice(0, 7) + '-01'
   const revenue = (db.prepare(`SELECT COALESCE(SUM(amount), 0) AS s FROM payments WHERE owner_id = ? AND deleted_at IS NULL AND paid_on >= ?`).get(ownerId, monthStart) as any).s
-  return { active, overdue, revenue }
+  const staffPaid = (db.prepare(`SELECT COALESCE(SUM(amount), 0) AS s FROM staff_payments WHERE owner_id = ? AND deleted_at IS NULL AND paid_on >= ?`).get(ownerId, monthStart) as any).s
+  return { active, overdue, revenue, staffPaid }
+}
+
+// =================== STAFF ===================
+
+export function listStaff(ownerId: string, q?: string) {
+  const sql = q
+    ? `SELECT * FROM staff WHERE owner_id = ? AND deleted_at IS NULL AND (name LIKE ? OR role LIKE ? OR contact LIKE ?) ORDER BY name`
+    : `SELECT * FROM staff WHERE owner_id = ? AND deleted_at IS NULL ORDER BY name`
+  const params = q ? [ownerId, `%${q}%`, `%${q}%`, `%${q}%`] : [ownerId]
+  return db.prepare(sql).all(...params)
+}
+
+export function getStaff(id: string) {
+  return db.prepare(`SELECT * FROM staff WHERE id = ?`).get(id)
+}
+
+export function createStaff(ownerId: string, d: any) {
+  const id = d.id ?? uuidv4()
+  const ts = now()
+  const row = {
+    id, owner_id: ownerId,
+    name: d.name,
+    role: d.role ?? '',
+    photo_path: d.photo_path ?? null,
+    photo_remote_path: d.photo_remote_path ?? null,
+    contact: d.contact ?? '',
+    cnic: d.cnic ?? '',
+    address: d.address ?? '',
+    monthly_salary: d.monthly_salary ?? 0,
+    joined_date: d.joined_date ?? null,
+    notes: d.notes ?? '',
+    created_at: ts, updated_at: ts, deleted_at: null,
+  }
+  db.prepare(`
+    INSERT INTO staff (id, owner_id, name, role, photo_path, photo_remote_path, contact, cnic, address, monthly_salary, joined_date, notes, created_at, updated_at, deleted_at)
+    VALUES (@id, @owner_id, @name, @role, @photo_path, @photo_remote_path, @contact, @cnic, @address, @monthly_salary, @joined_date, @notes, @created_at, @updated_at, @deleted_at)
+  `).run(row)
+  enqueue('staff', 'upsert', row)
+  return getStaff(id)
+}
+
+export function updateStaff(ownerId: string, id: string, d: any) {
+  const existing: any = getStaff(id)
+  if (!existing || existing.owner_id !== ownerId) throw new Error('Not found')
+  const ts = now()
+  const row = { ...existing, ...d, id, owner_id: ownerId, updated_at: ts, deleted_at: null }
+  db.prepare(`
+    UPDATE staff SET
+      name = @name, role = @role, photo_path = @photo_path, photo_remote_path = @photo_remote_path,
+      contact = @contact, cnic = @cnic, address = @address, monthly_salary = @monthly_salary,
+      joined_date = @joined_date, notes = @notes, updated_at = @updated_at
+    WHERE id = @id AND owner_id = @owner_id
+  `).run(row)
+  enqueue('staff', 'upsert', row)
+  return getStaff(id)
+}
+
+export function deleteStaff(ownerId: string, id: string) {
+  const ts = now()
+  db.prepare(`UPDATE staff SET deleted_at = ?, updated_at = ? WHERE id = ? AND owner_id = ?`).run(ts, ts, id, ownerId)
+  enqueue('staff', 'delete', { id, owner_id: ownerId, deleted_at: ts, updated_at: ts })
+  return true
+}
+
+export function listStaffPayments(ownerId: string, staffId: string) {
+  return db.prepare(`SELECT * FROM staff_payments WHERE staff_id = ? AND owner_id = ? AND deleted_at IS NULL ORDER BY paid_on DESC`).all(staffId, ownerId)
+}
+
+export function recordStaffPayment(ownerId: string, d: any) {
+  const id = d.id ?? uuidv4()
+  const ts = now()
+  const row = {
+    id, owner_id: ownerId,
+    staff_id: d.staff_id,
+    amount: d.amount,
+    paid_on: d.paid_on,
+    kind: d.kind ?? 'advance',
+    method: d.method ?? '',
+    note: d.note ?? '',
+    created_at: ts, updated_at: ts, deleted_at: null,
+  }
+  db.prepare(`
+    INSERT INTO staff_payments (id, owner_id, staff_id, amount, paid_on, kind, method, note, created_at, updated_at, deleted_at)
+    VALUES (@id, @owner_id, @staff_id, @amount, @paid_on, @kind, @method, @note, @created_at, @updated_at, @deleted_at)
+  `).run(row)
+  enqueue('staff_payments', 'upsert', row)
+  return listStaffPayments(ownerId, d.staff_id)
+}
+
+export function upsertRemoteStaff(ownerId: string, remote: any) {
+  const local: any = getStaff(remote.id)
+  if (local && local.updated_at >= remote.updated_at) return
+  db.prepare(`
+    INSERT INTO staff (id, owner_id, name, role, photo_path, photo_remote_path, contact, cnic, address, monthly_salary, joined_date, notes, created_at, updated_at, deleted_at)
+    VALUES (@id, @owner_id, @name, @role, @photo_path, @photo_remote_path, @contact, @cnic, @address, @monthly_salary, @joined_date, @notes, @created_at, @updated_at, @deleted_at)
+    ON CONFLICT(id) DO UPDATE SET
+      name = excluded.name, role = excluded.role,
+      photo_remote_path = excluded.photo_remote_path,
+      contact = excluded.contact, cnic = excluded.cnic, address = excluded.address,
+      monthly_salary = excluded.monthly_salary, joined_date = excluded.joined_date,
+      notes = excluded.notes, updated_at = excluded.updated_at, deleted_at = excluded.deleted_at
+  `).run({
+    id: remote.id, owner_id: ownerId,
+    name: remote.name, role: remote.role ?? '',
+    photo_path: local?.photo_path ?? null,
+    photo_remote_path: remote.photo_path ?? null,
+    contact: remote.contact ?? '', cnic: remote.cnic ?? '', address: remote.address ?? '',
+    monthly_salary: remote.monthly_salary ?? 0,
+    joined_date: remote.joined_date ?? null,
+    notes: remote.notes ?? '',
+    created_at: remote.created_at, updated_at: remote.updated_at, deleted_at: remote.deleted_at,
+  })
+}
+
+export function upsertRemoteStaffPayment(ownerId: string, remote: any) {
+  const r = db.prepare(`SELECT updated_at FROM staff_payments WHERE id = ?`).get(remote.id) as any
+  if (r && r.updated_at >= remote.updated_at) return
+  db.prepare(`
+    INSERT INTO staff_payments (id, owner_id, staff_id, amount, paid_on, kind, method, note, created_at, updated_at, deleted_at)
+    VALUES (@id, @owner_id, @staff_id, @amount, @paid_on, @kind, @method, @note, @created_at, @updated_at, @deleted_at)
+    ON CONFLICT(id) DO UPDATE SET
+      amount = excluded.amount, paid_on = excluded.paid_on, kind = excluded.kind,
+      method = excluded.method, note = excluded.note, updated_at = excluded.updated_at,
+      deleted_at = excluded.deleted_at
+  `).run({
+    id: remote.id, owner_id: ownerId, staff_id: remote.staff_id,
+    amount: remote.amount, paid_on: remote.paid_on, kind: remote.kind ?? 'advance',
+    method: remote.method ?? '', note: remote.note ?? '',
+    created_at: remote.created_at, updated_at: remote.updated_at, deleted_at: remote.deleted_at,
+  })
 }
 
 export function outboxCount(): number {

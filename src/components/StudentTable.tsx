@@ -10,7 +10,11 @@ interface Props {
 }
 
 export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Props) {
-  const today = new Date().toISOString().slice(0, 10)
+  const todayDate = new Date()
+  const today = todayDate.toISOString().slice(0, 10)
+  const soon = new Date(todayDate)
+  soon.setDate(soon.getDate() + 3)
+  const soonStr = soon.toISOString().slice(0, 10)
   if (students.length === 0) {
     return (
       <div className="py-24 text-center">
@@ -43,22 +47,28 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
           </tr>
         </thead>
         <tbody>
-          {students.map((s) => {
-            const overdue = s.next_fees_date && s.next_fees_date < today
+          {students.map((s, idx) => {
+            const overdue = !!(s.next_fees_date && s.next_fees_date < today)
+            const dueSoon = !overdue && !!(s.next_fees_date && s.next_fees_date <= soonStr)
+            const rowNum = students.length - idx
+            const rowBg = overdue ? 'bg-coral/[0.06] hover:bg-coral/[0.10]' : dueSoon ? 'bg-amber-400/[0.07] hover:bg-amber-400/[0.12]' : 'hover:bg-canvas/60'
             return (
               <tr
                 key={s.id}
-                className="group border-b border-line/70 last:border-0 hover:bg-canvas/60 transition"
+                className={`group border-b border-line/70 last:border-0 transition relative ${rowBg}`}
               >
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 relative">
+                  {overdue && <span className="absolute left-0 top-2 bottom-2 w-[3px] bg-coral rounded-r" />}
+                  {dueSoon && <span className="absolute left-0 top-2 bottom-2 w-[3px] bg-amber-400 rounded-r" />}
                   <div className="flex items-center gap-4">
                     <div className="relative">
                       <StudentAvatar student={s} size={44} />
                       {overdue && <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-coral border-2 border-surface rounded-full" />}
+                      {dueSoon && <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-amber-400 border-2 border-surface rounded-full" />}
                     </div>
                     <div>
-                      <p className="font-semibold text-ink text-[15px] leading-tight">{s.name}</p>
-                      <p className="text-xs text-soft mt-0.5 mono">#{String(s.sr_no).padStart(3, '0')}</p>
+                      <p className={`font-semibold text-[15px] leading-tight ${overdue ? 'text-coral' : 'text-ink'}`}>{s.name}</p>
+                      <p className="text-xs text-soft mt-0.5 mono">#{String(rowNum).padStart(3, '0')}</p>
                     </div>
                   </div>
                 </td>
@@ -77,10 +87,23 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
                   {s.fees.toLocaleString()}
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`mono text-xs tabular ${overdue ? 'text-coral font-semibold' : 'text-muted'}`}>
+                  <span className={`mono text-xs tabular inline-flex items-center gap-1.5 ${
+                    overdue ? 'text-coral font-semibold' : dueSoon ? 'text-amber-700 font-semibold' : 'text-muted'
+                  }`}>
                     {s.next_fees_date || '—'}
-                    {overdue && <span className="ml-1.5 inline-block w-1.5 h-1.5 bg-coral rounded-full align-middle" />}
+                    {overdue && <span className="w-1.5 h-1.5 bg-coral rounded-full" />}
+                    {dueSoon && <span className="w-1.5 h-1.5 bg-amber-400 rounded-full" />}
                   </span>
+                  {overdue && (
+                    <p className="text-[10px] uppercase tracking-wider text-coral font-bold mt-0.5">
+                      {daysAgo(s.next_fees_date!, today)} days late
+                    </p>
+                  )}
+                  {dueSoon && (
+                    <p className="text-[10px] uppercase tracking-wider text-amber-700 font-bold mt-0.5">
+                      {soonLabel(daysFrom(today, s.next_fees_date!))}
+                    </p>
+                  )}
                 </td>
                 <td className="px-6 py-4">
                   <span className="px-2.5 py-1 bg-surface-2 text-ink-2 rounded-full text-xs font-medium">
@@ -111,6 +134,20 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
       </table>
     </div>
   )
+}
+
+function daysAgo(date: string, today: string): number {
+  const a = new Date(date).getTime()
+  const b = new Date(today).getTime()
+  return Math.round((b - a) / 86400000)
+}
+function daysFrom(today: string, date: string): number {
+  return daysAgo(today, date) * -1
+}
+function soonLabel(days: number): string {
+  if (days <= 0) return 'due today'
+  if (days === 1) return 'due tomorrow'
+  return `due in ${days} days`
 }
 
 function Th({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
