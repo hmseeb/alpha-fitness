@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, nativeImage, shell } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -51,6 +51,13 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
     },
+  })
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) {
+      shell.openExternal(url)
+      return { action: 'deny' }
+    }
+    return { action: 'allow' }
   })
   if (isDev) win.loadURL(process.env.VITE_DEV_SERVER_URL!)
   else win.loadFile(path.join(__dirname, '../dist/index.html'))

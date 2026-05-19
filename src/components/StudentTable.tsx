@@ -1,6 +1,7 @@
 import type { Student } from '../types'
 import { Pencil, Trash2, Wallet, UserPlus, Sun, Moon } from 'lucide-react'
 import { StudentAvatar } from './StudentAvatar'
+import { WhatsAppLink, overdueMessage } from './WhatsAppLink'
 
 interface Props {
   students: Student[]
@@ -72,7 +73,17 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 mono text-sm text-muted">{s.contact || '—'}</td>
+                <td className="px-6 py-4 mono text-sm text-muted">
+                  {s.contact ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      {s.contact}
+                      <WhatsAppLink
+                        contact={s.contact}
+                        message={overdue ? overdueMessage(s, daysAgo(s.next_fees_date!, today)) : undefined}
+                      />
+                    </span>
+                  ) : '—'}
+                </td>
                 <td className="px-6 py-4">
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                     s.time_table === 'Morning'

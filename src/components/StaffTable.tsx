@@ -1,6 +1,7 @@
 import type { Staff, StaffPayment } from '../types'
 import { Pencil, Trash2, Wallet, BadgePlus } from 'lucide-react'
 import { StudentAvatar } from './StudentAvatar'
+import { WhatsAppLink } from './WhatsAppLink'
 
 interface Props {
   staff: Staff[]
@@ -62,7 +63,14 @@ export function StaffTable({ staff, paymentsThisMonth, onEdit, onDelete, onOpenL
                     {s.role || 'staff'}
                   </span>
                 </td>
-                <td className="px-6 py-4 mono text-sm text-muted">{s.contact || '—'}</td>
+                <td className="px-6 py-4 mono text-sm text-muted">
+                  {s.contact ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      {s.contact}
+                      <WhatsAppLink contact={s.contact} />
+                    </span>
+                  ) : '—'}
+                </td>
                 <td className="px-6 py-4 mono text-xs text-muted">{s.cnic || '—'}</td>
                 <td className="px-6 py-4 text-right mono tabular text-ink font-medium">
                   {s.monthly_salary.toLocaleString()}

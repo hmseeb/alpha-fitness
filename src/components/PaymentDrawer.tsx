@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Student, Payment } from '../types'
 import { X, Plus, CheckCircle2 } from 'lucide-react'
 import { StudentAvatar } from './StudentAvatar'
+import { WhatsAppLink, overdueMessage } from './WhatsAppLink'
 
 function absentMonths(student: Student): number {
   if (!student.next_fees_date) return 0
@@ -37,6 +38,9 @@ export function PaymentDrawer({ student, onClose }: { student: Student; onClose:
   }
 
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0)
+  const daysLate = student.next_fees_date
+    ? Math.max(0, Math.round((Date.now() - new Date(student.next_fees_date).getTime()) / 86400000))
+    : 0
 
   return (
     <div className="fixed inset-0 z-[100] flex">
@@ -59,8 +63,12 @@ export function PaymentDrawer({ student, onClose }: { student: Student; onClose:
             <StudentAvatar student={student} size={56} />
             <div className="flex-1">
               <h3 className="display-sm text-xl leading-tight">{student.name}</h3>
-              <p className="text-xs text-muted mt-1">
+              <p className="text-xs text-muted mt-1 inline-flex items-center gap-1.5">
                 {student.contact || 'no contact on file'}
+                <WhatsAppLink
+                  contact={student.contact}
+                  message={daysLate > 0 ? overdueMessage(student, daysLate) : undefined}
+                />
               </p>
             </div>
           </div>
