@@ -14,7 +14,11 @@ let supabase: SupabaseClient
 
 export function initSupabase() {
   supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
+    auth: { persistSession: false, autoRefreshToken: true },
+  })
+  // Re-persist on every token refresh so the cached session stays current.
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session) saveSession(session)
   })
   return supabase
 }
@@ -53,13 +57,20 @@ export function clearSession() {
 export async function restoreSession(): Promise<Session | null> {
   const session = loadSession()
   if (!session) return null
-  const { data, error } = await supabase.auth.setSession({
-    access_token: session.access_token,
-    refresh_token: session.refresh_token,
-  })
-  if (error || !data.session) { clearSession(); return null }
-  saveSession(data.session)
-  return data.session
+  // Try to validate / refresh the session via the network. If offline or the
+  // refresh fails for any other reason, fall back to the cached session so the
+  // user can keep working. We do NOT clear the cache on network errors.
+  try {
+    const { data, error } = await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    })
+    if (!error && data.session) {
+      saveSession(data.session)
+      return data.session
+    }
+  } catch {}
+  return session
 }
 
 export async function signIn(email: string, password: string) {

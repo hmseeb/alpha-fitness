@@ -3,6 +3,8 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import 'dotenv/config'
+import electronUpdater from 'electron-updater'
+const { autoUpdater } = electronUpdater
 
 app.setName('Alpha Fitness')
 import {
@@ -74,9 +76,28 @@ app.whenReady().then(async () => {
     win?.webContents.send('auth:state', session?.user ? { id: session.user.id, email: session.user.email } : null)
   })
 
+  // Auto-update in production: check on launch, then every 4 hours.
+  if (!isDev) {
+    autoUpdater.autoDownload = true
+    autoUpdater.autoInstallOnAppQuit = true
+    autoUpdater.on('update-downloaded', () => {
+      win?.webContents.send('update:ready')
+    })
+    autoUpdater.on('error', (err) => {
+      // Swallow update errors so they don't break the app
+      console.warn('autoUpdater:', err?.message ?? err)
+    })
+    autoUpdater.checkForUpdatesAndNotify().catch(() => {})
+    setInterval(() => autoUpdater.checkForUpdatesAndNotify().catch(() => {}), 4 * 60 * 60 * 1000)
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+ipcMain.handle('app:installUpdate', () => {
+  autoUpdater.quitAndInstall()
 })
 
 app.on('window-all-closed', () => {

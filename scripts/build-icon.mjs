@@ -1,5 +1,6 @@
 import sharp from 'sharp'
-import { mkdirSync, rmSync, existsSync } from 'node:fs'
+import pngToIco from 'png-to-ico'
+import { mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import path from 'node:path'
 
@@ -33,6 +34,15 @@ for (const [px, label] of sizes) {
 // Also write a flat 512 PNG used for window/dock icon
 await sharp(SRC).resize(512, 512).png().toFile(path.join(OUT_DIR, 'icon.png'))
 await sharp(SRC).resize(1024, 1024).png().toFile(path.join(OUT_DIR, 'icon@2x.png'))
+
+// Windows .ico (multi-resolution bundle)
+const icoSizes = [16, 24, 32, 48, 64, 128, 256]
+const icoBuffers = await Promise.all(
+  icoSizes.map((s) => sharp(SRC).resize(s, s).png().toBuffer())
+)
+const icoOut = await pngToIco(icoBuffers)
+writeFileSync(path.join(OUT_DIR, 'icon.ico'), icoOut)
+console.log('✓ icon.ico built')
 
 // Bundle .icns via macOS iconutil
 try {

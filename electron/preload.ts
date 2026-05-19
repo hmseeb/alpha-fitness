@@ -53,6 +53,14 @@ const api = {
       return () => ipcRenderer.off('sync:status', handler)
     },
   },
+  app: {
+    installUpdate: () => ipcRenderer.invoke('app:installUpdate'),
+    onUpdateReady: (cb: () => void) => {
+      const handler = () => cb()
+      ipcRenderer.on('update:ready', handler)
+      return () => ipcRenderer.off('update:ready', handler)
+    },
+  },
 }
 
 contextBridge.exposeInMainWorld('api', api)

@@ -1,8 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
 
-const URL = 'https://xkxlrtiovlmbdecjblpn.supabase.co'
-const SERVICE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhreGxydGlvdmxtYmRlY2pibHBuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTEyNDE5NiwiZXhwIjoyMDk0NzAwMTk2fQ.ljeHQXAEWxR2EtZpvI4bvMT7-ZEmDoImwrLhjzj5UeQ'
+const URL = process.env.SUPABASE_URL || 'https://xkxlrtiovlmbdecjblpn.supabase.co'
+const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY
+if (!SERVICE) {
+  console.error('Set SUPABASE_SERVICE_ROLE_KEY env var. Get it from Supabase dashboard → Settings → API.')
+  process.exit(1)
+}
 
 const supabase = createClient(URL, SERVICE, { auth: { persistSession: false } })
 
