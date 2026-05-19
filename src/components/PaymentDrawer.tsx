@@ -27,11 +27,15 @@ export function PaymentDrawer({ student, onClose }: { student: Student; onClose:
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0)
 
   return (
-    <div className="fixed inset-0 z-50 flex">
-      <div className="flex-1 bg-ink/40 backdrop-blur-md" onClick={onClose} />
-      <div className="slide-in w-full max-w-md bg-surface shadow-2xl flex flex-col">
-        {/* HEADER */}
-        <div className="px-6 pt-6 pb-5 border-b border-line">
+    <div className="fixed inset-0 z-[100] flex">
+      <div className="flex-1 bg-ink/50 backdrop-blur-md" onClick={onClose} />
+      <div
+        className="slide-in w-full max-w-md flex flex-col border-l border-line"
+        style={{ background: '#ffffff', boxShadow: '-30px 0 60px -20px rgba(10,10,10,0.25)' }}
+      >
+        {/* HEADER — also draggable strip at top */}
+        <div className="app-drag h-7 w-full" />
+        <div className="px-6 pt-2 pb-5 border-b border-line">
           <div className="flex items-center justify-between mb-5">
             <p className="text-xs uppercase tracking-widest text-muted font-semibold">Payments</p>
             <button onClick={onClose} className="p-2 rounded-xl bg-surface-2 hover:bg-surface-3 text-muted hover:text-ink transition">

@@ -26,19 +26,21 @@ export function Login({ onSignedIn }: { onSignedIn: (u: AuthUser) => void }) {
   }
 
   return (
-    <div className="mesh-bg min-h-screen bg-canvas flex items-center justify-center p-8">
-      {/* Background mesh — soft lime + coral blobs */}
-      <div className="absolute top-12 left-12 flex items-center gap-2.5">
-        <div className="w-9 h-9 bg-ink rounded-2xl flex items-center justify-center">
-          <Dumbbell size={18} className="text-lime" />
-        </div>
-        <div>
-          <p className="display-sm text-base">Alpha Fitness</p>
-          <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Jampur · Pakistan</p>
+    <div className="mesh-bg min-h-screen bg-canvas flex flex-col">
+      {/* Top bar: drag region + brand mark */}
+      <div className="app-drag flex items-center pl-24 pr-8 h-14 shrink-0 border-b border-line/60">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-ink rounded-xl flex items-center justify-center">
+            <Dumbbell size={15} className="text-lime" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold leading-none">Alpha Fitness</p>
+            <p className="text-[9px] uppercase tracking-[0.18em] text-muted mt-0.5">Jampur · Pakistan</p>
+          </div>
         </div>
       </div>
 
-      <div className="w-full max-w-[1100px] grid md:grid-cols-2 gap-8 items-center">
+      <div className="flex-1 w-full max-w-[1100px] mx-auto px-8 grid md:grid-cols-2 gap-8 items-center">
         {/* LEFT — hero */}
         <div className="pop">
           <span className="inline-flex items-center gap-2 bg-lime/30 text-ink-2 px-3 py-1.5 rounded-full text-xs font-medium mb-7">

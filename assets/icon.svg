@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1a1a1a"/>
+      <stop offset="1" stop-color="#0a0a0a"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="14" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect x="0" y="0" width="1024" height="1024" rx="230" fill="url(#bg)"/>
+
+  <!-- Lime glow blob -->
+  <circle cx="780" cy="240" r="280" fill="#d4ff3a" opacity="0.18" filter="blur(60px)"/>
+
+  <!-- Dumbbell silhouette: two weight stacks + bar -->
+  <g fill="#d4ff3a" filter="url(#glow)">
+    <!-- left weight stack -->
+    <rect x="180" y="380" width="60" height="264" rx="18"/>
+    <rect x="260" y="320" width="80" height="384" rx="22"/>
+    <!-- bar -->
+    <rect x="340" y="476" width="344" height="72" rx="14"/>
+    <!-- right weight stack -->
+    <rect x="684" y="320" width="80" height="384" rx="22"/>
+    <rect x="784" y="380" width="60" height="264" rx="18"/>
+  </g>
+
+  <!-- Brand mark in corner -->
+  <text x="512" y="900" font-family="-apple-system, sans-serif" font-weight="800" font-size="56"
+        text-anchor="middle" fill="#fafafa" letter-spacing="6">ALPHA</text>
+</svg>

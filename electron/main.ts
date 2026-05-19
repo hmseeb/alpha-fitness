@@ -1,8 +1,10 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import 'dotenv/config'
+
+app.setName('Alpha Fitness')
 import {
   initDb, listStudents, getStudent, createStudent, updateStudent, deleteStudent,
   savePhoto, listPayments, recordPayment, dashboardStats,
@@ -13,9 +15,22 @@ import { startSync, stopSync, statusSnapshot, getSignedPhotoUrl } from './sync.j
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isDev = !!process.env.VITE_DEV_SERVER_URL
 
+const iconPath = path.join(__dirname, '../assets/build/icon.png')
+const iconIcnsPath = path.join(__dirname, '../assets/build/icon.icns')
+
 let win: BrowserWindow | null = null
 let currentOwnerId: string | null = null
 let triggerSync: (() => Promise<void>) | null = null
+
+// Set dock icon on macOS as soon as app is ready
+if (process.platform === 'darwin') {
+  app.whenReady().then(() => {
+    try {
+      const img = nativeImage.createFromPath(fs.existsSync(iconIcnsPath) ? iconIcnsPath : iconPath)
+      if (!img.isEmpty()) app.dock?.setIcon(img)
+    } catch {}
+  })
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -23,8 +38,9 @@ function createWindow() {
     height: 820,
     minWidth: 1000,
     minHeight: 640,
-    title: 'Alpha Fitness Jampur',
-    backgroundColor: '#f8fafc',
+    title: 'Alpha Fitness',
+    icon: iconPath,
+    backgroundColor: '#f5f4ef',
     titleBarStyle: 'hiddenInset',
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),

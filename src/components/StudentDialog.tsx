@@ -50,8 +50,11 @@ export function StudentDialog({ student, onClose, onSaved }: { student: Student 
   }
 
   return (
-    <div className="fixed inset-0 bg-ink/40 backdrop-blur-md flex items-center justify-center z-50 p-6">
-      <div className="drop bg-surface rounded-4xl lift-deep w-full max-w-3xl max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-ink/50 backdrop-blur-md flex items-center justify-center z-[100] p-6">
+      <div
+        className="drop rounded-4xl lift-deep w-full max-w-3xl max-h-[92vh] overflow-y-auto"
+        style={{ background: '#ffffff' }}
+      >
         {/* HEADER */}
         <div className="sticky top-0 bg-surface/95 backdrop-blur-xl z-10 px-8 py-6 flex items-center justify-between border-b border-line">
           <div>

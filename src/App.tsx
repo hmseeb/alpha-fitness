@@ -63,8 +63,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-canvas text-ink">
       {/* HEADER */}
-      <header className="sticky top-0 z-20 bg-canvas/85 backdrop-blur-xl border-b border-line">
-        <div className="max-w-[1500px] mx-auto px-8 py-4 flex items-center justify-between gap-6">
+      <header className="app-drag sticky top-0 z-10 bg-canvas/85 backdrop-blur-xl border-b border-line">
+        <div className="max-w-[1500px] mx-auto pl-24 pr-8 py-4 flex items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-ink rounded-2xl flex items-center justify-center">
               <Dumbbell size={18} className="text-lime" />
