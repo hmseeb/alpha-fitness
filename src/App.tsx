@@ -9,6 +9,7 @@ import { StaffDialog } from './components/StaffDialog'
 import { StaffPaymentDrawer } from './components/StaffPaymentDrawer'
 import { Login } from './components/Login'
 import { SyncBadge } from './components/SyncBadge'
+import { UpdateToast } from './components/UpdateToast'
 import { Plus, Download, Search, Dumbbell, Users, BadgePlus } from 'lucide-react'
 import { exportToExcel } from './lib/export'
 
@@ -215,6 +216,8 @@ export default function App() {
           onClose={() => { setDrawerStaff(null); refresh() }}
         />
       )}
+
+      <UpdateToast />
     </div>
   )
 }

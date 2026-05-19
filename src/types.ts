@@ -115,6 +115,10 @@ declare global {
         status: () => Promise<{ pending: number; lastSyncedAt: string | null }>
         onStatus: (cb: (s: SyncStatus) => void) => () => void
       }
+      app: {
+        installUpdate: () => Promise<void>
+        onUpdateReady: (cb: () => void) => () => void
+      }
     }
   }
 }
