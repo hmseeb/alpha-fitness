@@ -158,11 +158,35 @@ export function createStudent(ownerId: string, d: any) {
     updated_at: ts,
     deleted_at: null,
   }
-  db.prepare(`
-    INSERT INTO students (id, owner_id, sr_no, photo_path, photo_remote_path, name, contact, time_table, fees, month, reg_fee_status, entry_date, next_fees_date, membership, paid_through, remaining, created_at, updated_at, deleted_at)
-    VALUES (@id, @owner_id, @sr_no, @photo_path, @photo_remote_path, @name, @contact, @time_table, @fees, @month, @reg_fee_status, @entry_date, @next_fees_date, @membership, @paid_through, @remaining, @created_at, @updated_at, @deleted_at)
-  `).run(row)
-  enqueue('students', 'upsert', row)
+  const joiningPaid = Math.max(0, (row.fees ?? 0) - (row.remaining ?? 0))
+  const joiningRow = joiningPaid > 0 ? {
+    id: uuidv4(),
+    owner_id: ownerId,
+    student_id: id,
+    amount: joiningPaid,
+    paid_on: row.entry_date ?? todayIso(),
+    method: row.paid_through ?? '',
+    note: 'joining',
+    created_at: ts,
+    updated_at: ts,
+    deleted_at: null,
+  } : null
+
+  const tx = db.transaction(() => {
+    db.prepare(`
+      INSERT INTO students (id, owner_id, sr_no, photo_path, photo_remote_path, name, contact, time_table, fees, month, reg_fee_status, entry_date, next_fees_date, membership, paid_through, remaining, created_at, updated_at, deleted_at)
+      VALUES (@id, @owner_id, @sr_no, @photo_path, @photo_remote_path, @name, @contact, @time_table, @fees, @month, @reg_fee_status, @entry_date, @next_fees_date, @membership, @paid_through, @remaining, @created_at, @updated_at, @deleted_at)
+    `).run(row)
+    enqueue('students', 'upsert', row)
+    if (joiningRow) {
+      db.prepare(`
+        INSERT INTO payments (id, owner_id, student_id, amount, paid_on, method, note, created_at, updated_at, deleted_at)
+        VALUES (@id, @owner_id, @student_id, @amount, @paid_on, @method, @note, @created_at, @updated_at, @deleted_at)
+      `).run(joiningRow)
+      enqueue('payments', 'upsert', joiningRow)
+    }
+  })
+  tx()
   return getStudent(id)
 }
 
