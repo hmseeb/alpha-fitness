@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import type { Student, DashStats, AuthUser, Staff, StaffPayment } from './types'
+import type { Student, DashStats, AuthUser, Staff, StaffPayment, MemberFilter } from './types'
 import { Dashboard } from './components/Dashboard'
 import { StudentTable } from './components/StudentTable'
 import { StudentDialog } from './components/StudentDialog'
@@ -22,6 +22,7 @@ export default function App() {
   const [staff, setStaff] = useState<Staff[]>([])
   const [staffPayThisMonth, setStaffPayThisMonth] = useState<Record<string, number>>({})
   const [stats, setStats] = useState<DashStats>({ active: 0, overdue: 0, revenue: 0, staffPaid: 0 })
+  const [memberFilter, setMemberFilter] = useState<MemberFilter>('all')
   const [q, setQ] = useState('')
   const [editing, setEditing] = useState<Student | null | 'new'>(null)
   const [editingStaff, setEditingStaff] = useState<Staff | null | 'new'>(null)
@@ -82,6 +83,14 @@ export default function App() {
   const onSignOut = async () => { await window.api.auth.signOut(); setUser(null) }
   const isMembers = tab === 'members'
 
+  // Clicking a dashboard card filters the roster to that subset (and jumps to the members tab).
+  const applyMemberFilter = (f: MemberFilter) => { setTab('members'); setMemberFilter(f) }
+
+  const today = new Date().toISOString().slice(0, 10)
+  const visibleStudents = memberFilter === 'overdue'
+    ? students.filter((s) => s.next_fees_date && s.next_fees_date < today)
+    : students
+
   return (
     <div className="min-h-screen bg-canvas text-ink">
       <header className="app-drag sticky top-0 z-10 bg-canvas/85 backdrop-blur-xl border-b border-line">
@@ -99,7 +108,7 @@ export default function App() {
           {/* TABS */}
           <div className="flex items-center bg-surface-2 rounded-2xl p-1">
             <button
-              onClick={() => { setTab('members'); setQ('') }}
+              onClick={() => { setTab('members'); setQ(''); setMemberFilter('all') }}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition ${
                 isMembers ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'
               }`}
@@ -145,27 +154,37 @@ export default function App() {
 
       <main className="max-w-[1500px] mx-auto px-8 py-10 space-y-10">
         <div className="pop">
-          <Dashboard stats={stats} />
+          <Dashboard stats={stats} filter={memberFilter} onFilter={applyMemberFilter} />
         </div>
 
         <section className="pop pop-4">
           <div className="flex items-end justify-between mb-5">
             <div>
               <h2 className="display-md text-[2.5rem]">
-                {isMembers ? 'Roster.' : 'Payroll.'}
+                {isMembers ? (memberFilter === 'overdue' ? 'Overdue.' : 'Roster.') : 'Payroll.'}
               </h2>
               <p className="text-sm text-muted mt-1">
                 {isMembers
-                  ? `All members on the books · ${students.length} total`
+                  ? memberFilter === 'overdue'
+                    ? `Members past their due date · ${visibleStudents.length} of ${students.length}`
+                    : `All members on the books · ${students.length} total`
                   : `All staff on payroll · ${staff.length} total`}
               </p>
             </div>
+            {isMembers && memberFilter !== 'all' && (
+              <button
+                onClick={() => setMemberFilter('all')}
+                className="px-4 py-2.5 bg-surface hover:bg-surface-2 border border-line transition rounded-2xl text-sm font-semibold text-ink"
+              >
+                Show all members
+              </button>
+            )}
           </div>
 
           <div className="bg-surface rounded-4xl lift overflow-hidden">
             {isMembers ? (
               <StudentTable
-                students={students}
+                students={visibleStudents}
                 onEdit={(s) => setEditing(s)}
                 onOpenPayments={(s) => setDrawerStudent(s)}
                 onDelete={async (s) => {

@@ -40,6 +40,7 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
             <Th>Contact</Th>
             <Th>Schedule</Th>
             <Th align="right">Fee</Th>
+            <Th>Joined</Th>
             <Th>Next due</Th>
             <Th>Tier</Th>
             <Th>Method</Th>
@@ -96,6 +97,9 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
                 </td>
                 <td className="px-6 py-4 text-right mono tabular text-ink font-medium">
                   {s.fees.toLocaleString()}
+                </td>
+                <td className="px-6 py-4 mono text-xs tabular text-muted">
+                  {s.entry_date || '—'}
                 </td>
                 <td className="px-6 py-4">
                   <span className={`mono text-xs tabular inline-flex items-center gap-1.5 ${

@@ -89,6 +89,7 @@ async function pushOutbox(ownerId: string) {
             reg_fee_status: payload.reg_fee_status, entry_date: payload.entry_date,
             next_fees_date: payload.next_fees_date, membership: payload.membership,
             paid_through: payload.paid_through, remaining: payload.remaining,
+            notes: payload.notes,
             photo_path: photoRemote,
             updated_at: payload.updated_at, deleted_at: payload.deleted_at,
           }

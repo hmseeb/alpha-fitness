@@ -1,7 +1,12 @@
 import { Users, AlertTriangle, TrendingUp, ArrowUpRight, Wallet } from 'lucide-react'
-import type { DashStats } from '../types'
+import type { DashStats, MemberFilter } from '../types'
 
-export function Dashboard({ stats }: { stats: DashStats; totalMembers?: number }) {
+export function Dashboard({ stats, filter, onFilter }: {
+  stats: DashStats
+  totalMembers?: number
+  filter?: MemberFilter
+  onFilter?: (f: MemberFilter) => void
+}) {
   const net = stats.revenue - stats.staffPaid
   return (
     <section>
@@ -28,6 +33,8 @@ export function Dashboard({ stats }: { stats: DashStats; totalMembers?: number }
           accent="lime"
           delay="pop-1"
           sub="enrolled & training"
+          onClick={onFilter ? () => onFilter('all') : undefined}
+          active={filter === 'all'}
         />
         <StatCard
           label="Overdue"
@@ -36,6 +43,8 @@ export function Dashboard({ stats }: { stats: DashStats; totalMembers?: number }
           accent={stats.overdue > 0 ? 'coral' : 'moss'}
           delay="pop-2"
           sub={stats.overdue > 0 ? 'fees past due' : 'all caught up'}
+          onClick={onFilter ? () => onFilter('overdue') : undefined}
+          active={filter === 'overdue'}
         />
         <StatCard
           label="Fees in"
@@ -60,8 +69,8 @@ export function Dashboard({ stats }: { stats: DashStats; totalMembers?: number }
   )
 }
 
-function StatCard({ label, value, icon: Icon, accent, delay, sub, isCurrency }: {
-  label: string; value: number; icon: any; accent: 'lime' | 'coral' | 'azure' | 'moss' | 'plum'; delay: string; sub: string; isCurrency?: boolean
+function StatCard({ label, value, icon: Icon, accent, delay, sub, isCurrency, onClick, active }: {
+  label: string; value: number; icon: any; accent: 'lime' | 'coral' | 'azure' | 'moss' | 'plum'; delay: string; sub: string; isCurrency?: boolean; onClick?: () => void; active?: boolean
 }) {
   const accentMap: Record<string, { iconBg: string; iconColor: string; ring: string }> = {
     lime:   { iconBg: 'bg-ink',   iconColor: 'text-lime',  ring: 'from-lime/30' },
@@ -71,9 +80,10 @@ function StatCard({ label, value, icon: Icon, accent, delay, sub, isCurrency }: 
     plum:   { iconBg: 'bg-plum',  iconColor: 'text-white', ring: 'from-plum/15' },
   }
   const c = accentMap[accent]
+  const clickable = !!onClick
 
-  return (
-    <div className={`stat-card pop ${delay} relative bg-surface rounded-4xl lift p-6 overflow-hidden`}>
+  const inner = (
+    <>
       <div className={`absolute -top-20 -right-20 w-48 h-48 rounded-full bg-gradient-to-br ${c.ring} to-transparent blur-2xl`} />
 
       <div className="relative flex items-start justify-between mb-7">
@@ -82,7 +92,7 @@ function StatCard({ label, value, icon: Icon, accent, delay, sub, isCurrency }: 
         </div>
         <span className="text-[11px] font-semibold text-muted uppercase tracking-wider flex items-center gap-1">
           {label}
-          <ArrowUpRight size={11} className="opacity-40" />
+          {clickable && <ArrowUpRight size={11} className="opacity-40" />}
         </span>
       </div>
 
@@ -94,6 +104,24 @@ function StatCard({ label, value, icon: Icon, accent, delay, sub, isCurrency }: 
       <p className="text-xs text-muted mt-4 pt-4 border-t border-line">
         {sub}
       </p>
-    </div>
+    </>
   )
+
+  const base = `stat-card pop ${delay} relative bg-surface rounded-4xl lift p-6 overflow-hidden`
+
+  if (clickable) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={active}
+        title={active ? `Showing ${label.toLowerCase()}` : `Filter to ${label.toLowerCase()}`}
+        className={`${base} w-full text-left cursor-pointer transition hover:-translate-y-0.5 ${active ? 'ring-2 ring-ink ring-offset-2 ring-offset-canvas' : ''}`}
+      >
+        {inner}
+      </button>
+    )
+  }
+
+  return <div className={base}>{inner}</div>
 }

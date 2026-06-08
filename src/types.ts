@@ -15,6 +15,7 @@ export interface Student {
   membership: string
   paid_through: string
   remaining: number
+  notes: string
   created_at?: string
   updated_at?: string
   deleted_at?: string | null
@@ -30,6 +31,9 @@ export interface Payment {
 }
 
 export interface DashStats { active: number; overdue: number; revenue: number; staffPaid: number }
+
+// Which member subset the roster is filtered to (driven by clicking dashboard cards)
+export type MemberFilter = 'all' | 'overdue'
 
 export interface Staff {
   id: string

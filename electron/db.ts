@@ -36,6 +36,7 @@ export function initDb() {
       membership TEXT DEFAULT 'Normal',
       paid_through TEXT DEFAULT '',
       remaining INTEGER DEFAULT 0,
+      notes TEXT DEFAULT '',
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
       updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
       deleted_at TEXT
@@ -108,6 +109,18 @@ export function initDb() {
       value TEXT
     );
   `)
+
+  // Lightweight column migrations for already-populated databases.
+  // CREATE TABLE IF NOT EXISTS won't add columns to an existing table, so
+  // additive columns must be backfilled here. Each guard keeps initDb idempotent.
+  ensureColumn('students', 'notes', `TEXT DEFAULT ''`)
+}
+
+function ensureColumn(table: string, column: string, definition: string) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`)
+  }
 }
 
 function now() { return new Date().toISOString() }
@@ -154,6 +167,7 @@ export function createStudent(ownerId: string, d: any) {
     membership: d.membership ?? 'Normal',
     paid_through: d.paid_through ?? '',
     remaining: d.remaining ?? 0,
+    notes: d.notes ?? '',
     created_at: ts,
     updated_at: ts,
     deleted_at: null,
@@ -174,8 +188,8 @@ export function createStudent(ownerId: string, d: any) {
 
   const tx = db.transaction(() => {
     db.prepare(`
-      INSERT INTO students (id, owner_id, sr_no, photo_path, photo_remote_path, name, contact, time_table, fees, month, reg_fee_status, entry_date, next_fees_date, membership, paid_through, remaining, created_at, updated_at, deleted_at)
-      VALUES (@id, @owner_id, @sr_no, @photo_path, @photo_remote_path, @name, @contact, @time_table, @fees, @month, @reg_fee_status, @entry_date, @next_fees_date, @membership, @paid_through, @remaining, @created_at, @updated_at, @deleted_at)
+      INSERT INTO students (id, owner_id, sr_no, photo_path, photo_remote_path, name, contact, time_table, fees, month, reg_fee_status, entry_date, next_fees_date, membership, paid_through, remaining, notes, created_at, updated_at, deleted_at)
+      VALUES (@id, @owner_id, @sr_no, @photo_path, @photo_remote_path, @name, @contact, @time_table, @fees, @month, @reg_fee_status, @entry_date, @next_fees_date, @membership, @paid_through, @remaining, @notes, @created_at, @updated_at, @deleted_at)
     `).run(row)
     enqueue('students', 'upsert', row)
     if (joiningRow) {
@@ -201,7 +215,7 @@ export function updateStudent(ownerId: string, id: string, d: any) {
       name = @name, contact = @contact, time_table = @time_table, fees = @fees,
       month = @month, reg_fee_status = @reg_fee_status, entry_date = @entry_date,
       next_fees_date = @next_fees_date, membership = @membership, paid_through = @paid_through,
-      remaining = @remaining, updated_at = @updated_at
+      remaining = @remaining, notes = @notes, updated_at = @updated_at
     WHERE id = @id AND owner_id = @owner_id
   `).run(row)
   enqueue('students', 'upsert', row)
@@ -471,8 +485,8 @@ export function upsertRemoteStudent(ownerId: string, remote: any) {
   const local: any = getStudent(remote.id)
   if (local && local.updated_at >= remote.updated_at) return
   db.prepare(`
-    INSERT INTO students (id, owner_id, sr_no, photo_path, photo_remote_path, name, contact, time_table, fees, month, reg_fee_status, entry_date, next_fees_date, membership, paid_through, remaining, created_at, updated_at, deleted_at)
-    VALUES (@id, @owner_id, @sr_no, @photo_path, @photo_remote_path, @name, @contact, @time_table, @fees, @month, @reg_fee_status, @entry_date, @next_fees_date, @membership, @paid_through, @remaining, @created_at, @updated_at, @deleted_at)
+    INSERT INTO students (id, owner_id, sr_no, photo_path, photo_remote_path, name, contact, time_table, fees, month, reg_fee_status, entry_date, next_fees_date, membership, paid_through, remaining, notes, created_at, updated_at, deleted_at)
+    VALUES (@id, @owner_id, @sr_no, @photo_path, @photo_remote_path, @name, @contact, @time_table, @fees, @month, @reg_fee_status, @entry_date, @next_fees_date, @membership, @paid_through, @remaining, @notes, @created_at, @updated_at, @deleted_at)
     ON CONFLICT(id) DO UPDATE SET
       sr_no = excluded.sr_no,
       photo_remote_path = excluded.photo_remote_path,
@@ -480,7 +494,7 @@ export function upsertRemoteStudent(ownerId: string, remote: any) {
       fees = excluded.fees, month = excluded.month, reg_fee_status = excluded.reg_fee_status,
       entry_date = excluded.entry_date, next_fees_date = excluded.next_fees_date,
       membership = excluded.membership, paid_through = excluded.paid_through,
-      remaining = excluded.remaining, updated_at = excluded.updated_at,
+      remaining = excluded.remaining, notes = excluded.notes, updated_at = excluded.updated_at,
       deleted_at = excluded.deleted_at
   `).run({
     id: remote.id,
@@ -499,6 +513,7 @@ export function upsertRemoteStudent(ownerId: string, remote: any) {
     membership: remote.membership ?? 'Normal',
     paid_through: remote.paid_through ?? '',
     remaining: remote.remaining ?? 0,
+    notes: remote.notes ?? '',
     created_at: remote.created_at,
     updated_at: remote.updated_at,
     deleted_at: remote.deleted_at,

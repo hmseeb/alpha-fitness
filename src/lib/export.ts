@@ -15,6 +15,7 @@ export function exportToExcel(students: Student[]): Uint8Array {
     'Membership': s.membership,
     'Paid Through': s.paid_through,
     'Remaining': s.remaining,
+    'Notes': s.notes,
   }))
   const ws = XLSX.utils.json_to_sheet(rows)
   const wb = XLSX.utils.book_new()

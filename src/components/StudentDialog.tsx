@@ -15,6 +15,7 @@ const empty: Partial<Student> = {
   membership: 'Normal',
   paid_through: '',
   remaining: 0,
+  notes: '',
   photo_path: null,
   photo_remote_path: null,
 }
@@ -147,6 +148,17 @@ export function StudentDialog({ student, onClose, onSaved }: { student: Student 
               </Field>
             </div>
           </Group>
+
+          {/* Notes */}
+          <Group label="Notes" emoji="④">
+            <Field label="Notes">
+              <TextArea
+                value={data.notes ?? ''}
+                onChange={(v) => setData({ ...data, notes: v })}
+                placeholder="Injuries, goals, preferences, anything worth remembering…"
+              />
+            </Field>
+          </Group>
         </div>
 
         {/* FOOTER */}
@@ -198,6 +210,18 @@ function TextInput({ value, onChange, type = 'text', placeholder }: { value: str
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
       className="w-full bg-canvas border border-line focus:bg-surface focus:border-ink rounded-2xl px-4 py-3 text-sm outline-none transition placeholder-soft"
+    />
+  )
+}
+
+function TextArea({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <textarea
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value)}
+      rows={3}
+      className="w-full bg-canvas border border-line focus:bg-surface focus:border-ink rounded-2xl px-4 py-3 text-sm outline-none transition placeholder-soft resize-y"
     />
   )
 }
