@@ -6,3 +6,7 @@ dist-electron
 data/
 .env
 .env.local
+
+# Tooling / CLI state — not meant to be versioned
+.omc/
+supabase/.temp/
