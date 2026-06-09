@@ -2,7 +2,7 @@
   "name": "alpha-fitness",
   "productName": "Alpha Fitness",
   "private": true,
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Alpha Fitness Jampur — gym management",
   "main": "dist-electron/main.js",
   "type": "module",
