@@ -7,6 +7,7 @@ export function exportToExcel(students: Student[]): Uint8Array {
     'Name': s.name,
     'Contact': s.contact,
     'Time Table': s.time_table,
+    'PT Fee': s.pt_fee,
     'Fees': s.fees,
     'Month': s.month,
     'Reg Fee Status': s.reg_fee_status,

@@ -7,6 +7,7 @@ const empty: Partial<Student> = {
   name: '',
   contact: '',
   time_table: 'Evening',
+  pt_fee: 0,
   fees: 4000,
   month: new Date().toLocaleString('default', { month: 'long' }),
   reg_fee_status: 'Nill',
@@ -134,6 +135,9 @@ export function StudentDialog({ student, onClose, onSaved }: { student: Student 
           {/* Money */}
           <Group label="Payment" emoji="③">
             <div className="grid grid-cols-2 gap-4">
+              <Field label="PT fee (PKR)">
+                <TextInput type="number" value={String(data.pt_fee ?? 0)} onChange={(v) => setData({ ...data, pt_fee: +v })} />
+              </Field>
               <Field label="Monthly fee (PKR)">
                 <TextInput type="number" value={String(data.fees ?? 0)} onChange={(v) => setData({ ...data, fees: +v })} />
               </Field>

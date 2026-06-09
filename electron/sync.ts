@@ -85,7 +85,7 @@ async function pushOutbox(ownerId: string) {
           const remote = {
             id: payload.id, owner_id: ownerId,
             sr_no: payload.sr_no, name: payload.name, contact: payload.contact,
-            time_table: payload.time_table, fees: payload.fees, month: payload.month,
+            time_table: payload.time_table, pt_fee: payload.pt_fee, fees: payload.fees, month: payload.month,
             reg_fee_status: payload.reg_fee_status, entry_date: payload.entry_date,
             next_fees_date: payload.next_fees_date, membership: payload.membership,
             paid_through: payload.paid_through, remaining: payload.remaining,

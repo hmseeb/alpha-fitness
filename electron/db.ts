@@ -28,6 +28,7 @@ export function initDb() {
       name TEXT NOT NULL,
       contact TEXT DEFAULT '',
       time_table TEXT DEFAULT 'Evening',
+      pt_fee INTEGER DEFAULT 0,
       fees INTEGER DEFAULT 0,
       month TEXT DEFAULT '',
       reg_fee_status TEXT DEFAULT 'Nill',
@@ -114,6 +115,7 @@ export function initDb() {
   // CREATE TABLE IF NOT EXISTS won't add columns to an existing table, so
   // additive columns must be backfilled here. Each guard keeps initDb idempotent.
   ensureColumn('students', 'notes', `TEXT DEFAULT ''`)
+  ensureColumn('students', 'pt_fee', `INTEGER DEFAULT 0`)
 }
 
 function ensureColumn(table: string, column: string, definition: string) {
@@ -159,6 +161,7 @@ export function createStudent(ownerId: string, d: any) {
     name: d.name,
     contact: d.contact ?? '',
     time_table: d.time_table ?? 'Evening',
+    pt_fee: d.pt_fee ?? 0,
     fees: d.fees ?? 0,
     month: d.month ?? '',
     reg_fee_status: d.reg_fee_status ?? 'Nill',
@@ -188,8 +191,8 @@ export function createStudent(ownerId: string, d: any) {
 
   const tx = db.transaction(() => {
     db.prepare(`
-      INSERT INTO students (id, owner_id, sr_no, photo_path, photo_remote_path, name, contact, time_table, fees, month, reg_fee_status, entry_date, next_fees_date, membership, paid_through, remaining, notes, created_at, updated_at, deleted_at)
-      VALUES (@id, @owner_id, @sr_no, @photo_path, @photo_remote_path, @name, @contact, @time_table, @fees, @month, @reg_fee_status, @entry_date, @next_fees_date, @membership, @paid_through, @remaining, @notes, @created_at, @updated_at, @deleted_at)
+      INSERT INTO students (id, owner_id, sr_no, photo_path, photo_remote_path, name, contact, time_table, pt_fee, fees, month, reg_fee_status, entry_date, next_fees_date, membership, paid_through, remaining, notes, created_at, updated_at, deleted_at)
+      VALUES (@id, @owner_id, @sr_no, @photo_path, @photo_remote_path, @name, @contact, @time_table, @pt_fee, @fees, @month, @reg_fee_status, @entry_date, @next_fees_date, @membership, @paid_through, @remaining, @notes, @created_at, @updated_at, @deleted_at)
     `).run(row)
     enqueue('students', 'upsert', row)
     if (joiningRow) {
@@ -212,7 +215,7 @@ export function updateStudent(ownerId: string, id: string, d: any) {
   db.prepare(`
     UPDATE students SET
       sr_no = @sr_no, photo_path = @photo_path, photo_remote_path = @photo_remote_path,
-      name = @name, contact = @contact, time_table = @time_table, fees = @fees,
+      name = @name, contact = @contact, time_table = @time_table, pt_fee = @pt_fee, fees = @fees,
       month = @month, reg_fee_status = @reg_fee_status, entry_date = @entry_date,
       next_fees_date = @next_fees_date, membership = @membership, paid_through = @paid_through,
       remaining = @remaining, notes = @notes, updated_at = @updated_at
@@ -322,7 +325,11 @@ export function dashboardStats(ownerId: string) {
   const monthStart = today.slice(0, 7) + '-01'
   const revenue = (db.prepare(`SELECT COALESCE(SUM(amount), 0) AS s FROM payments WHERE owner_id = ? AND deleted_at IS NULL AND paid_on >= ?`).get(ownerId, monthStart) as any).s
   const staffPaid = (db.prepare(`SELECT COALESCE(SUM(amount), 0) AS s FROM staff_payments WHERE owner_id = ? AND deleted_at IS NULL AND paid_on >= ?`).get(ownerId, monthStart) as any).s
-  return { active, overdue, revenue, staffPaid }
+  // Fees expected this week: members whose next due date falls in the next 7 days (today inclusive), not yet overdue.
+  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 6)
+  const weekEndStr = weekEnd.toISOString().slice(0, 10)
+  const upcoming = (db.prepare(`SELECT COALESCE(SUM(fees), 0) AS s FROM students WHERE owner_id = ? AND deleted_at IS NULL AND next_fees_date IS NOT NULL AND next_fees_date >= ? AND next_fees_date <= ?`).get(ownerId, today, weekEndStr) as any).s
+  return { active, overdue, revenue, staffPaid, upcoming }
 }
 
 // =================== STAFF ===================
@@ -485,13 +492,13 @@ export function upsertRemoteStudent(ownerId: string, remote: any) {
   const local: any = getStudent(remote.id)
   if (local && local.updated_at >= remote.updated_at) return
   db.prepare(`
-    INSERT INTO students (id, owner_id, sr_no, photo_path, photo_remote_path, name, contact, time_table, fees, month, reg_fee_status, entry_date, next_fees_date, membership, paid_through, remaining, notes, created_at, updated_at, deleted_at)
-    VALUES (@id, @owner_id, @sr_no, @photo_path, @photo_remote_path, @name, @contact, @time_table, @fees, @month, @reg_fee_status, @entry_date, @next_fees_date, @membership, @paid_through, @remaining, @notes, @created_at, @updated_at, @deleted_at)
+    INSERT INTO students (id, owner_id, sr_no, photo_path, photo_remote_path, name, contact, time_table, pt_fee, fees, month, reg_fee_status, entry_date, next_fees_date, membership, paid_through, remaining, notes, created_at, updated_at, deleted_at)
+    VALUES (@id, @owner_id, @sr_no, @photo_path, @photo_remote_path, @name, @contact, @time_table, @pt_fee, @fees, @month, @reg_fee_status, @entry_date, @next_fees_date, @membership, @paid_through, @remaining, @notes, @created_at, @updated_at, @deleted_at)
     ON CONFLICT(id) DO UPDATE SET
       sr_no = excluded.sr_no,
       photo_remote_path = excluded.photo_remote_path,
       name = excluded.name, contact = excluded.contact, time_table = excluded.time_table,
-      fees = excluded.fees, month = excluded.month, reg_fee_status = excluded.reg_fee_status,
+      pt_fee = excluded.pt_fee, fees = excluded.fees, month = excluded.month, reg_fee_status = excluded.reg_fee_status,
       entry_date = excluded.entry_date, next_fees_date = excluded.next_fees_date,
       membership = excluded.membership, paid_through = excluded.paid_through,
       remaining = excluded.remaining, notes = excluded.notes, updated_at = excluded.updated_at,
@@ -505,6 +512,7 @@ export function upsertRemoteStudent(ownerId: string, remote: any) {
     name: remote.name,
     contact: remote.contact ?? '',
     time_table: remote.time_table ?? 'Evening',
+    pt_fee: remote.pt_fee ?? 0,
     fees: remote.fees ?? 0,
     month: remote.month ?? '',
     reg_fee_status: remote.reg_fee_status ?? 'Nill',

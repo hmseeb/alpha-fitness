@@ -7,6 +7,7 @@ export interface Student {
   name: string
   contact: string
   time_table: 'Morning' | 'Evening'
+  pt_fee: number
   fees: number
   month: string
   reg_fee_status: 'Paid' | 'Nill'
@@ -30,10 +31,10 @@ export interface Payment {
   note: string
 }
 
-export interface DashStats { active: number; overdue: number; revenue: number; staffPaid: number }
+export interface DashStats { active: number; overdue: number; revenue: number; staffPaid: number; upcoming: number }
 
 // Which member subset the roster is filtered to (driven by clicking dashboard cards)
-export type MemberFilter = 'all' | 'overdue'
+export type MemberFilter = 'all' | 'overdue' | 'upcoming'
 
 export interface Staff {
   id: string

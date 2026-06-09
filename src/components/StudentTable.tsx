@@ -39,6 +39,7 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
             <Th>Member</Th>
             <Th>Contact</Th>
             <Th>Schedule</Th>
+            <Th align="right">PT Fee</Th>
             <Th align="right">Fee</Th>
             <Th>Joined</Th>
             <Th>Next due</Th>
@@ -94,6 +95,9 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
                     {s.time_table === 'Morning' ? <Sun size={11} /> : <Moon size={11} />}
                     {s.time_table}
                   </span>
+                </td>
+                <td className="px-6 py-4 text-right mono tabular text-muted">
+                  {s.pt_fee > 0 ? s.pt_fee.toLocaleString() : <span className="text-soft">—</span>}
                 </td>
                 <td className="px-6 py-4 text-right mono tabular text-ink font-medium">
                   {s.fees.toLocaleString()}

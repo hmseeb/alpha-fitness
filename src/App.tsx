@@ -21,7 +21,7 @@ export default function App() {
   const [students, setStudents] = useState<Student[]>([])
   const [staff, setStaff] = useState<Staff[]>([])
   const [staffPayThisMonth, setStaffPayThisMonth] = useState<Record<string, number>>({})
-  const [stats, setStats] = useState<DashStats>({ active: 0, overdue: 0, revenue: 0, staffPaid: 0 })
+  const [stats, setStats] = useState<DashStats>({ active: 0, overdue: 0, revenue: 0, staffPaid: 0, upcoming: 0 })
   const [memberFilter, setMemberFilter] = useState<MemberFilter>('all')
   const [q, setQ] = useState('')
   const [editing, setEditing] = useState<Student | null | 'new'>(null)
@@ -87,9 +87,14 @@ export default function App() {
   const applyMemberFilter = (f: MemberFilter) => { setTab('members'); setMemberFilter(f) }
 
   const today = new Date().toISOString().slice(0, 10)
-  const visibleStudents = memberFilter === 'overdue'
-    ? students.filter((s) => s.next_fees_date && s.next_fees_date < today)
-    : students
+  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 6)
+  const weekEndStr = weekEnd.toISOString().slice(0, 10)
+  const visibleStudents =
+    memberFilter === 'overdue'
+      ? students.filter((s) => s.next_fees_date && s.next_fees_date < today)
+      : memberFilter === 'upcoming'
+      ? students.filter((s) => s.next_fees_date && s.next_fees_date >= today && s.next_fees_date <= weekEndStr)
+      : students
 
   return (
     <div className="min-h-screen bg-canvas text-ink">
@@ -161,12 +166,14 @@ export default function App() {
           <div className="flex items-end justify-between mb-5">
             <div>
               <h2 className="display-md text-[2.5rem]">
-                {isMembers ? (memberFilter === 'overdue' ? 'Overdue.' : 'Roster.') : 'Payroll.'}
+                {isMembers ? (memberFilter === 'overdue' ? 'Overdue.' : memberFilter === 'upcoming' ? 'Due this week.' : 'Roster.') : 'Payroll.'}
               </h2>
               <p className="text-sm text-muted mt-1">
                 {isMembers
                   ? memberFilter === 'overdue'
                     ? `Members past their due date · ${visibleStudents.length} of ${students.length}`
+                    : memberFilter === 'upcoming'
+                    ? `Fees due in the next 7 days · ${visibleStudents.length} of ${students.length}`
                     : `All members on the books · ${students.length} total`
                   : `All staff on payroll · ${staff.length} total`}
               </p>

@@ -1,4 +1,4 @@
-import { Users, AlertTriangle, TrendingUp, ArrowUpRight, Wallet } from 'lucide-react'
+import { Users, AlertTriangle, TrendingUp, ArrowUpRight, CalendarClock } from 'lucide-react'
 import type { DashStats, MemberFilter } from '../types'
 
 export function Dashboard({ stats, filter, onFilter }: {
@@ -56,13 +56,15 @@ export function Dashboard({ stats, filter, onFilter }: {
           isCurrency
         />
         <StatCard
-          label="Staff paid"
-          value={stats.staffPaid}
-          icon={Wallet}
+          label="Upcoming fees"
+          value={stats.upcoming}
+          icon={CalendarClock}
           accent="plum"
           delay="pop-4"
-          sub="payroll this month"
+          sub="expected this week"
           isCurrency
+          onClick={onFilter ? () => onFilter('upcoming') : undefined}
+          active={filter === 'upcoming'}
         />
       </div>
     </section>
