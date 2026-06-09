@@ -161,7 +161,8 @@ function daysAgo(date: string, today: string): number {
   return Math.round((b - a) / 86400000)
 }
 function daysFrom(today: string, date: string): number {
-  return daysAgo(today, date) * -1
+  // daysAgo(today, date) already yields (date − today), i.e. days until `date`.
+  return daysAgo(today, date)
 }
 function soonLabel(days: number): string {
   if (days <= 0) return 'due today'
