@@ -325,10 +325,10 @@ export function dashboardStats(ownerId: string) {
   const monthStart = today.slice(0, 7) + '-01'
   const revenue = (db.prepare(`SELECT COALESCE(SUM(amount), 0) AS s FROM payments WHERE owner_id = ? AND deleted_at IS NULL AND paid_on >= ?`).get(ownerId, monthStart) as any).s
   const staffPaid = (db.prepare(`SELECT COALESCE(SUM(amount), 0) AS s FROM staff_payments WHERE owner_id = ? AND deleted_at IS NULL AND paid_on >= ?`).get(ownerId, monthStart) as any).s
-  // Fees expected this week: members whose next due date falls in the next 7 days (today inclusive), not yet overdue.
-  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 6)
-  const weekEndStr = weekEnd.toISOString().slice(0, 10)
-  const upcoming = (db.prepare(`SELECT COALESCE(SUM(fees), 0) AS s FROM students WHERE owner_id = ? AND deleted_at IS NULL AND next_fees_date IS NOT NULL AND next_fees_date >= ? AND next_fees_date <= ?`).get(ownerId, today, weekEndStr) as any).s
+  // Fees expected soon: members whose next due date falls in the next 2 days (today inclusive), not yet overdue.
+  const dueSoon = new Date(); dueSoon.setDate(dueSoon.getDate() + 2)
+  const dueSoonStr = dueSoon.toISOString().slice(0, 10)
+  const upcoming = (db.prepare(`SELECT COALESCE(SUM(fees), 0) AS s FROM students WHERE owner_id = ? AND deleted_at IS NULL AND next_fees_date IS NOT NULL AND next_fees_date >= ? AND next_fees_date <= ?`).get(ownerId, today, dueSoonStr) as any).s
   return { active, overdue, revenue, staffPaid, upcoming }
 }
 

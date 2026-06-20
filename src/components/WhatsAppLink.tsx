@@ -14,6 +14,15 @@ export function overdueMessage(student: Student, daysLate: number): string {
   return `Assalam o Alaikum ${firstName}, this is a reminder from Alpha Fitness — your monthly fee of PKR ${amount.toLocaleString()} is pending${dueLine}. Please clear it at your earliest convenience. JazakAllah!`
 }
 
+export function dueSoonMessage(student: Student, daysUntil: number): string {
+  const firstName = (student.name || '').trim().split(/\s+/)[0] || 'there'
+  const amount = (student.remaining > 0 ? student.remaining : student.fees) || 0
+  const dueDate = student.next_fees_date || ''
+  const when = daysUntil <= 0 ? 'is due today' : daysUntil === 1 ? 'is due tomorrow' : `is due in ${daysUntil} days`
+  const dueLine = dueDate ? ` on ${dueDate}` : ''
+  return `Assalam o Alaikum ${firstName}, a friendly reminder from Alpha Fitness — your monthly fee of PKR ${amount.toLocaleString()} ${when}${dueLine}. Please clear it on time. JazakAllah!`
+}
+
 // Pakistani local "0333-1234567" -> "923331234567". Already-intl numbers pass through.
 function toWaNumber(raw: string): string | null {
   const digits = raw.replace(/\D/g, '')

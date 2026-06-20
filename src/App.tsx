@@ -87,13 +87,13 @@ export default function App() {
   const applyMemberFilter = (f: MemberFilter) => { setTab('members'); setMemberFilter(f) }
 
   const today = new Date().toISOString().slice(0, 10)
-  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 6)
-  const weekEndStr = weekEnd.toISOString().slice(0, 10)
+  const dueSoon = new Date(); dueSoon.setDate(dueSoon.getDate() + 2)
+  const dueSoonStr = dueSoon.toISOString().slice(0, 10)
   const visibleStudents =
     memberFilter === 'overdue'
       ? students.filter((s) => s.next_fees_date && s.next_fees_date < today)
       : memberFilter === 'upcoming'
-      ? students.filter((s) => s.next_fees_date && s.next_fees_date >= today && s.next_fees_date <= weekEndStr)
+      ? students.filter((s) => s.next_fees_date && s.next_fees_date >= today && s.next_fees_date <= dueSoonStr)
       : students
 
   return (
@@ -166,14 +166,14 @@ export default function App() {
           <div className="flex items-end justify-between mb-5">
             <div>
               <h2 className="display-md text-[2.5rem]">
-                {isMembers ? (memberFilter === 'overdue' ? 'Overdue.' : memberFilter === 'upcoming' ? 'Due this week.' : 'Roster.') : 'Payroll.'}
+                {isMembers ? (memberFilter === 'overdue' ? 'Overdue.' : memberFilter === 'upcoming' ? 'Due soon.' : 'Roster.') : 'Payroll.'}
               </h2>
               <p className="text-sm text-muted mt-1">
                 {isMembers
                   ? memberFilter === 'overdue'
                     ? `Members past their due date · ${visibleStudents.length} of ${students.length}`
                     : memberFilter === 'upcoming'
-                    ? `Fees due in the next 7 days · ${visibleStudents.length} of ${students.length}`
+                    ? `Fees due in the next 2 days · ${visibleStudents.length} of ${students.length}`
                     : `All members on the books · ${students.length} total`
                   : `All staff on payroll · ${staff.length} total`}
               </p>

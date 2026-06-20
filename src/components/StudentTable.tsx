@@ -1,7 +1,7 @@
 import type { Student } from '../types'
 import { Pencil, Trash2, Wallet, UserPlus, Sun, Moon } from 'lucide-react'
 import { StudentAvatar } from './StudentAvatar'
-import { WhatsAppLink, overdueMessage } from './WhatsAppLink'
+import { WhatsAppLink, overdueMessage, dueSoonMessage } from './WhatsAppLink'
 
 interface Props {
   students: Student[]
@@ -14,7 +14,7 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
   const todayDate = new Date()
   const today = todayDate.toISOString().slice(0, 10)
   const soon = new Date(todayDate)
-  soon.setDate(soon.getDate() + 3)
+  soon.setDate(soon.getDate() + 2)
   const soonStr = soon.toISOString().slice(0, 10)
   if (students.length === 0) {
     return (
@@ -81,7 +81,14 @@ export function StudentTable({ students, onEdit, onDelete, onOpenPayments }: Pro
                       {s.contact}
                       <WhatsAppLink
                         contact={s.contact}
-                        message={overdue ? overdueMessage(s, daysAgo(s.next_fees_date!, today)) : undefined}
+                        size={18}
+                        message={
+                          overdue
+                            ? overdueMessage(s, daysAgo(s.next_fees_date!, today))
+                            : dueSoon
+                            ? dueSoonMessage(s, daysFrom(today, s.next_fees_date!))
+                            : undefined
+                        }
                       />
                     </span>
                   ) : '—'}
